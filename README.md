@@ -6,7 +6,7 @@ A management system for technology stores.
 
 - Python
 - FastAPI
-- MySQL
+- PostgreSQL
 
 ## Status
 
