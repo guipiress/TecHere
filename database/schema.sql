@@ -1,5 +1,6 @@
 --===============================
 --USERS
+--===============================
 CREATE TABLE users (
 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 name VARCHAR(50) NOT NULL,
@@ -14,6 +15,7 @@ cpf CHAR(11) UNIQUE NOT NULL
 
 --===============================
 --ADDRESS
+--===============================
 CREATE TABLE address (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
@@ -28,10 +30,10 @@ CREATE TABLE address (
 );
 
 
---================================
+--===============================
 --CATEGORY
+--===============================
 CREATE TABLE category (
 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 name VARCHAR(100) UNIQUE NOT NULL
 );
-
