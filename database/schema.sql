@@ -37,3 +37,18 @@ CREATE TABLE category (
 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 name VARCHAR(100) UNIQUE NOT NULL
 );
+
+
+--===============================
+--PRODUCT
+--===============================
+CREATE TABLE product (
+id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+name VARCHAR(150) NOT NULL,
+purchase_price NUMERIC(10,2) NOT NULL,
+sale_price NUMERIC(10,2) NOT NULL,
+stock INTEGER NOT NULL,
+brand VARCHAR(50) NOT NULL,
+category_id INTEGER NOT NULL REFERENCES category(id),
+description TEXT
+);
