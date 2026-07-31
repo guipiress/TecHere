@@ -52,3 +52,16 @@ brand VARCHAR(50) NOT NULL,
 category_id INTEGER NOT NULL REFERENCES category(id),
 description TEXT
 );
+
+
+--===============================
+--ORDERS
+--===============================
+CREATE TABLE order (
+id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+user_id INTEGER NOT NU REFERENCES users(id),
+address_id INTEGER NOT NULL REFERENCES address(id),
+status VARCHAR(50) NOT NULL,
+total_price NUMERIC(10,2) NOT NULL,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
