@@ -47,9 +47,12 @@ name VARCHAR(100) UNIQUE NOT NULL
 CREATE TABLE product (
 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 name VARCHAR(150) NOT NULL,
-purchase_price NUMERIC(10,2) NOT NULL,
-sale_price NUMERIC(10,2) NOT NULL,
-stock INTEGER NOT NULL,
+purchase_price NUMERIC(10,2) NOT NULL
+    CHECK(purchase_price >= 0),
+sale_price NUMERIC(10,2) NOT NULL
+    CHECK(sale_price >= 0),
+stock INTEGER NOT NULL
+    CHECK(stock >= 0),
 brand VARCHAR(50) NOT NULL,
 category_id INTEGER NOT NULL REFERENCES category(id),
 description TEXT
