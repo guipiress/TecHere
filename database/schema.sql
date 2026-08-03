@@ -59,9 +59,21 @@ description TEXT
 --===============================
 CREATE TABLE order (
 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-user_id INTEGER NOT NU REFERENCES users(id),
+user_id INTEGER NOT NULL REFERENCES users(id),
 address_id INTEGER NOT NULL REFERENCES address(id),
 status VARCHAR(50) NOT NULL,
 total_price NUMERIC(10,2) NOT NULL,
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--==============================
+--order_items
+--==============================
+CREATE TABLE order_items (
+id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+order_id INTEGER NOT NULL REFERENCES orders(id),
+product_id INTEGER NOT NULL REFERENCES product(id),
+quantity INTEGER NOT NULL CHECK(quantity > 0),
+unit_price NUMERIC(10,2) NOT NULL
 );
