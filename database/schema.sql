@@ -23,9 +23,9 @@ CREATE TABLE address (
     user_id INTEGER NOT NULL REFERENCES users(id),
     street VARCHAR(100) NOT NULL,
     street_number VARCHAR(10) NOT NULL,
-    district VARCHAR(100),
+    district VARCHAR(100) NOT NULL,
     city VARCHAR(100) NOT NULL,
-    state VARCHAR(100),
+    state VARCHAR(100) NOT NULL,
     zip_code VARCHAR(20) NOT NULL,
     country CHAR(2) NOT NULL,
     complement VARCHAR(100)
