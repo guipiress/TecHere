@@ -16,13 +16,16 @@ products = [
     {"id": 3, "name": "Teclado"}
 ]
 
+
 @app.get("/")
 async def root():
     return "Store"
 
+
 @app.get("/products")
 async def get_products():
     return products
+
 
 @app.get("/products/{id}")
 async def get_product(id: int):
@@ -31,6 +34,7 @@ async def get_product(id: int):
             return product
             
     raise HTTPException(status_code=404, detail="Product not found")
+
 
 @app.post("/product")
 async def create_product(product: Product):
@@ -45,6 +49,26 @@ async def create_product(product: Product):
 
     return new_product
 
+
+@app.put("/products/{id}")
+async def up_product(id: int, product: Product):
+    for item in products:
+        if item["id"] == id:
+            item.update(product.model_dump())
+            return item
+    raise HTTPException(status_code=404, detail="Product not found")   
+
+
+@app.delete("/products/{id}")
+async def delete_product(id: int):
+    for item in products:
+        if item["id"] == id:
+            product_name = item["name"]
+            products.remove(item)
+            return f"{product_name} deleted"
+    raise HTTPException(status_code=404, detail="Product not found")
+
+     
 
     
 
