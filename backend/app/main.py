@@ -1,11 +1,16 @@
+from backend.app.database import fetch_products, fetch_product_byid
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from decimal import Decimal
 
 class Product(BaseModel):
-        name: str
-        purchase_price: Decimal
-        sale_price: Decimal
+    name: str
+    purchase_price: Decimal
+    sale_price: Decimal
+    stock: int
+    brand: str
+    category_id: int
+    description: str
 
 
 app = FastAPI()
@@ -24,17 +29,18 @@ async def root():
 
 @app.get("/products")
 async def get_products():
-    return products
+    return fetch_products()
 
 
 @app.get("/products/{id}")
 async def get_product(id: int):
-    for product in products:
-        if product["id"] == id:
-            return product
-            
-    raise HTTPException(status_code=404, detail="Product not found")
+    product = fetch_product_byid(id)
 
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return product
+        
 
 @app.post("/product")
 async def create_product(product: Product):
