@@ -1,4 +1,4 @@
-from backend.app.database import fetch_products, fetch_product_by_id, post_product
+from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 from decimal import Decimal
@@ -55,14 +55,21 @@ async def create_product(product: Product):
     return new_product
 
 
-
 @app.put("/products/{id}")
 async def up_product(id: int, product: Product):
-    for item in products:
-        if item["id"] == id:
-            item.update(product.model_dump())
-            return item
-    raise HTTPException(status_code=404, detail="Product not found")   
+    result = put_product(
+        id,
+        product.name,
+        product.purchase_price,
+        product.sale_price,
+        product.stock,
+        product.brand,
+        product.category_id,
+        product.description
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
 
 
 @app.delete("/products/{id}")

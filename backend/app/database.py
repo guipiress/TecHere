@@ -21,7 +21,7 @@ def fetch_products():
     cursor.execute("SELECT * FROM product")
 
     products = cursor.fetchall()
-    print(products)
+    
     cursor.close()
 
     return products
@@ -70,4 +70,43 @@ def post_product(name, purchase_price, sale_price, stock, brand, category_id, de
 
     connection.commit()
     cursor.close()
+
+
+def put_product(id, name, purchase_price, sale_price, stock, brand, category_id, description):
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        UPDATE product
+        SET
+            name = %s,
+            purchase_price = %s,
+            sale_price = %s,
+            stock = %s,
+            brand = %s,
+            category_id = %s,
+            description = %s
+        WHERE id = %s
+        RETURNING *
+        """,
+        (
+            name,
+            purchase_price,
+            sale_price,
+            stock,
+            brand,
+            category_id,
+            description,
+            id
+        )
+    )
+    product = cursor.fetchone()
+
+    if product is None:
+        cursor.close()
+        return None
     
+    connection.commit()
+    cursor.close()
+
+    return product
