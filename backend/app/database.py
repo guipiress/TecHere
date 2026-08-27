@@ -21,14 +21,13 @@ def fetch_products():
     cursor.execute("SELECT * FROM product")
 
     products = cursor.fetchall()
-
+    print(products)
     cursor.close()
 
     return products
 
-print(fetch_products())
 
-def fetch_product_byid(id):
+def fetch_product_by_id(id):
     cursor = connection.cursor()
 
     cursor.execute("SELECT * FROM product WHERE id = %s",
@@ -37,6 +36,38 @@ def fetch_product_byid(id):
 
     product = cursor.fetchone()
 
-    cursor.close
+    cursor.close()
 
     return product
+
+
+def post_product(name, purchase_price, sale_price, stock, brand, category_id, description):
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO product (
+            name,
+            purchase_price,
+            sale_price,
+            stock,
+            brand,
+            category_id,
+            description
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            name,
+            purchase_price,
+            sale_price,
+            stock,
+            brand,
+            category_id,
+            description
+        )
+    )
+
+    connection.commit()
+    cursor.close()
+    
