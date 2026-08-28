@@ -1,4 +1,4 @@
-from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product
+from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product, del_product
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 from decimal import Decimal
@@ -74,13 +74,17 @@ async def up_product(id: int, product: Product):
 
 @app.delete("/products/{id}")
 async def delete_product(id: int):
-    for item in products:
-        if item["id"] == id:
-            product_name = item["name"]
-            products.remove(item)
-            return f"{product_name} deleted"
-    raise HTTPException(status_code=404, detail="Product not found")
+    
+    result = del_product(id)
 
+    if result is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    return result
+
+
+    
+    
      
 
     

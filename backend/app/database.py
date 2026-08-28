@@ -110,3 +110,30 @@ def put_product(id, name, purchase_price, sale_price, stock, brand, category_id,
     cursor.close()
 
     return product
+
+
+def del_product(id):
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM product 
+        WHERE id = %s
+        RETURNING *
+         """,
+         (id,)
+    )
+    product = cursor.fetchone()
+
+    if product is None:
+        cursor.close()
+        return None
+
+    connection.commit()
+    cursor.close()
+
+    return product
+
+    
+
+
