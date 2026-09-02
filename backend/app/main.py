@@ -12,6 +12,16 @@ class Product(BaseModel):
     category_id: int
     description: str
 
+class ProductCreate(BaseModel):
+    name: str
+    purchase_price: Decimal 
+    sale_price: Decimal 
+    stock: int
+    brand: str
+    category_id: int
+    description: str | None = None
+
+
 
 app = FastAPI()
 
