@@ -79,8 +79,8 @@ async def create_product(product: ProductCreate):
 
 
 
-@app.put("/products/{id}")
-async def up_product(id: int, product: Product):
+@app.put("/products/{id}", response_model=ProductResponse)
+async def up_product(id: int, product: ProductUpdate):
     result = put_product(
         id,
         product.name,
@@ -93,7 +93,7 @@ async def up_product(id: int, product: Product):
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Product not found")
-    return product
+    return result
 
 
 
