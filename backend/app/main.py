@@ -63,8 +63,8 @@ async def get_product(id: int):
     return product
         
 
-@app.post("/products", status_code=201)
-async def create_product(product: Product):
+@app.post("/products", status_code=201, response_model=ProductResponse)
+async def create_product(product: ProductCreate):
     new_product = post_product(
         product.name,
         product.purchase_price,
@@ -74,7 +74,9 @@ async def create_product(product: Product):
         product.category_id,
         product.description
     )
+
     return new_product
+
 
 
 @app.put("/products/{id}")
@@ -92,6 +94,7 @@ async def up_product(id: int, product: Product):
     if result is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
 
 
 @app.delete("/products/{id}")

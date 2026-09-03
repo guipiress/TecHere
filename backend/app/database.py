@@ -56,6 +56,7 @@ def post_product(name, purchase_price, sale_price, stock, brand, category_id, de
             description
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s)
+        RETURNING *
         """,
         (
             name,
@@ -68,8 +69,13 @@ def post_product(name, purchase_price, sale_price, stock, brand, category_id, de
         )
     )
 
+    product = cursor.fetchone()
+
     connection.commit()
     cursor.close()
+    
+    return product
+
 
 
 def put_product(id, name, purchase_price, sale_price, stock, brand, category_id, description):
