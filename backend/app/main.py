@@ -97,7 +97,7 @@ async def up_product(id: int, product: ProductUpdate):
 
 
 
-@app.delete("/products/{id}")
+@app.delete("/products/{id}", response_model=ProductResponse)
 async def delete_product(id: int):
 
     result = del_product(id)
