@@ -54,7 +54,7 @@ async def get_products():
     return fetch_products()
 
 
-@app.get("/products/{id}")
+@app.get("/products/{id}", response_model=ProductResponse)
 async def get_product(id: int):
     product = fetch_product_by_id(id)
     if product is None:
