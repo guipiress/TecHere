@@ -49,7 +49,7 @@ async def root():
     return "Store"
 
 
-@app.get("/products")
+@app.get("/products", response_model=list[ProductResponse])
 async def get_products():
     return fetch_products()
 
