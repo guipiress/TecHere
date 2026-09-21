@@ -2,7 +2,11 @@ from backend.app.database import fetch_products, fetch_product_by_id, post_produ
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 from decimal import Decimal
-
+from backend.app.schemas.product import (
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse
+)
     
 app = FastAPI()
 
