@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException
-from backend.app.database import fetch_products, fetch_product_by_id
-from backend.app.schemas.product import ProductResponse
+from backend.app.database import fetch_products, fetch_product_by_id, post_product
+from backend.app.schemas.product import ProductResponse, ProductCreate
 
 
 router = APIRouter()
+
 
 @router.get("/products", response_model=list[ProductResponse])
 async def get_products():
@@ -19,3 +20,17 @@ async def get_product(id: int):
 
     return product
         
+
+@router.post("/products", status_code=201, response_model=ProductResponse)
+async def create_product(product: ProductCreate):
+    new_product = post_product(
+        product.name,
+        product.purchase_price,
+        product.sale_price,
+        product.stock,
+        product.brand,
+        product.category_id,
+        product.description
+    )
+
+    return new_product
