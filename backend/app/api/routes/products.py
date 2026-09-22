@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from backend.app.database import fetch_products, fetch_product_by_id, post_product
-from backend.app.schemas.product import ProductResponse, ProductCreate
+from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product, del_product
+from backend.app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 
 
 router = APIRouter()
@@ -34,3 +34,31 @@ async def create_product(product: ProductCreate):
     )
 
     return new_product
+
+
+@router.put("/products/{id}", response_model=ProductResponse)
+async def up_product(id: int, product: ProductUpdate):
+    result = put_product(
+        id,
+        product.name,
+        product.purchase_price,
+        product.sale_price,
+        product.stock,
+        product.brand,
+        product.category_id,
+        product.description
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return result
+
+
+@router.delete("/products/{id}", response_model=ProductResponse)
+async def delete_product(id: int):
+
+    result = del_product(id)
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    return result
