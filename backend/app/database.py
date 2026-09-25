@@ -30,15 +30,13 @@ def fetch_products():
 
 
 def fetch_product_by_id(id):
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM product WHERE id = %s",
-                   (id,)
-    )
-
-    product = cursor.fetchone()
-
-    cursor.close()
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                "SELECT * FROM product WHERE id = %s",
+                (id,)
+            )
+            product = cursor.fetchone()
 
     return product
 
