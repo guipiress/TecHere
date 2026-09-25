@@ -42,40 +42,23 @@ def fetch_product_by_id(id):
 
 
 def post_product(name, purchase_price, sale_price, stock, brand, category_id, description):
-    cursor = connection.cursor()
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                INSERT INTO product
+                (name, purchase_price, sale_price, stock, brand, category_id, description)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING *
+                """,
+                (name, purchase_price, sale_price, stock, brand, category_id, description)
+            )
 
-    cursor.execute(
-        """
-        INSERT INTO product (
-            name,
-            purchase_price,
-            sale_price,
-            stock,
-            brand,
-            category_id,
-            description
-        )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        RETURNING *
-        """,
-        (
-            name,
-            purchase_price,
-            sale_price,
-            stock,
-            brand,
-            category_id,
-            description
-        )
-    )
+            product = cursor.fetchone()
 
-    product = cursor.fetchone()
+            connection.commit()
 
-    connection.commit()
-    cursor.close()
-    
     return product
-
 
 
 def put_product(id, name, purchase_price, sale_price, stock, brand, category_id, description):
