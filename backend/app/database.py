@@ -1,28 +1,30 @@
 import os
-import psycopg
-from psycopg.rows import dict_row
 from dotenv import load_dotenv
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
+
 
 load_dotenv()
 
-connection = psycopg.connect(
-    host=os.getenv("DB_HOST"),
-    dbname=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    port=os.getenv("DB_PORT"),
-    row_factory=dict_row
+
+pool = ConnectionPool(
+    conninfo=(
+        f"host={os.getenv('DB_HOST')} "
+        f"dbname={os.getenv('DB_NAME')} "
+        f"user={os.getenv('DB_USER')} "
+        f"password={os.getenv('DB_PASSWORD')} "
+        f"port={os.getenv('DB_PORT')}"
+    ),
+    min_size=1,
+    max_size=10
 )
 
 
 def fetch_products():
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM product")
-
-    products = cursor.fetchall()
-    
-    cursor.close()
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute("SELECT * FROM product")
+            products = cursor.fetchall()
 
     return products
 
