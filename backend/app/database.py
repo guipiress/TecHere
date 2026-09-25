@@ -102,24 +102,24 @@ def put_product(id, name, purchase_price, sale_price, stock, brand, category_id,
 
 
 def del_product(id):
-    cursor = connection.cursor()
+    with pool.connection() as connection:
+        with connection.cursor(row_factory-dict_row) as cursor:
 
-    cursor.execute(
-        """
-        DELETE FROM product 
-        WHERE id = %s
-        RETURNING *
-         """,
-         (id,)
-    )
-    product = cursor.fetchone()
+            cursor.execute(
+                """
+                DELETE FROM product 
+                WHERE id = %s
+                RETURNING *
+                """,
+                (id,)
+            )
+            product = cursor.fetchone()
 
-    if product is None:
-        cursor.close()
-        return None
+            if product is None:
+                connection.rollback()
+                return None
 
-    connection.commit()
-    cursor.close()
+            connection.commit()
 
     return product
 
