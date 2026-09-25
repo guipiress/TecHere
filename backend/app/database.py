@@ -62,41 +62,41 @@ def post_product(name, purchase_price, sale_price, stock, brand, category_id, de
 
 
 def put_product(id, name, purchase_price, sale_price, stock, brand, category_id, description):
-    cursor = connection.cursor()
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                UPDATE product
+                SET
+                    name = %s,
+                    purchase_price = %s,
+                    sale_price = %s,
+                    stock = %s,
+                    brand = %s,
+                    category_id = %s,
+                    description = %s
+                WHERE id = %s
+                RETURNING *
+                """,
+                (
+                    name,
+                    purchase_price,
+                    sale_price,
+                    stock,
+                    brand,
+                    category_id,
+                    description,
+                    id
+                )
+            )
 
-    cursor.execute(
-        """
-        UPDATE product
-        SET
-            name = %s,
-            purchase_price = %s,
-            sale_price = %s,
-            stock = %s,
-            brand = %s,
-            category_id = %s,
-            description = %s
-        WHERE id = %s
-        RETURNING *
-        """,
-        (
-            name,
-            purchase_price,
-            sale_price,
-            stock,
-            brand,
-            category_id,
-            description,
-            id
-        )
-    )
-    product = cursor.fetchone()
+            product = cursor.fetchone()
 
-    if product is None:
-        cursor.close()
-        return None
-    
-    connection.commit()
-    cursor.close()
+            if product is None:
+                connection.rollback()
+                return None
+
+            connection.commit()
 
     return product
 
