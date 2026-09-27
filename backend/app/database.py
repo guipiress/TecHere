@@ -1,23 +1,9 @@
 import os
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
-
+from main import lifespan
 
 load_dotenv()
-
-
-pool = ConnectionPool(
-    conninfo=(
-        f"host={os.getenv('DB_HOST')} "
-        f"dbname={os.getenv('DB_NAME')} "
-        f"user={os.getenv('DB_USER')} "
-        f"password={os.getenv('DB_PASSWORD')} "
-        f"port={os.getenv('DB_PORT')}"
-    ),
-    min_size=1,
-    max_size=10
-)
 
 
 def fetch_products():
