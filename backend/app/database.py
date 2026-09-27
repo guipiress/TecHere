@@ -1,12 +1,11 @@
 import os
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
-from main import lifespan
 
 load_dotenv()
 
 
-def fetch_products():
+def fetch_products(pool):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute("SELECT * FROM product")
@@ -14,8 +13,7 @@ def fetch_products():
 
     return products
 
-
-def fetch_product_by_id(id):
+def fetch_product_by_id(id, pool):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -27,7 +25,7 @@ def fetch_product_by_id(id):
     return product
 
 
-def post_product(name, purchase_price, sale_price, stock, brand, category_id, description):
+def post_product(pool, name, purchase_price, sale_price, stock, brand, category_id, description):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -39,15 +37,13 @@ def post_product(name, purchase_price, sale_price, stock, brand, category_id, de
                 """,
                 (name, purchase_price, sale_price, stock, brand, category_id, description)
             )
-
             product = cursor.fetchone()
-
             connection.commit()
 
     return product
 
 
-def put_product(id, name, purchase_price, sale_price, stock, brand, category_id, description):
+def put_product(pool, id, name, purchase_price, sale_price, stock, brand, category_id, description):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -87,18 +83,18 @@ def put_product(id, name, purchase_price, sale_price, stock, brand, category_id,
     return product
 
 
-def del_product(id):
+def del_product(pool, id):
     with pool.connection() as connection:
-        with connection.cursor(row_factory-dict_row) as cursor:
-
+        with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
-                DELETE FROM product 
+                DELETE FROM product
                 WHERE id = %s
                 RETURNING *
                 """,
                 (id,)
             )
+
             product = cursor.fetchone()
 
             if product is None:
@@ -108,7 +104,6 @@ def del_product(id):
             connection.commit()
 
     return product
-
     
 
 
