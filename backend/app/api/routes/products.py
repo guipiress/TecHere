@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from backend.app.dependencies import get_pool
 from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product, del_product
 from backend.app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 
@@ -7,9 +8,7 @@ router = APIRouter()
 
 
 @router.get("/products", response_model=list[ProductResponse])
-async def get_products(request: Request):
-    pool = request.app.state.pool
-
+async def get_products(pool = Depends(get_pool)):
     return fetch_products(pool)
 
 
