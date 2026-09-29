@@ -81,6 +81,31 @@ def post_product(
     return product
 
 
+def create_category(
+    pool,
+    *,
+    name: str
+):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO category (name)
+                    VALUES (%s)
+                    RETURNING *
+                    """,
+                    (name,)
+                )
+
+                category = cursor.fetchone()
+
+            except errors.UniqueViolation:
+                raise
+
+    return category
+
+
 def put_product(
     pool,
     id: int,

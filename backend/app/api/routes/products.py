@@ -45,6 +45,22 @@ async def create_product(product: ProductCreate, pool=Depends(get_pool)):
         return new_product
 
 
+@router.post("/categories")
+async def create_category(category: CategoryCreate, pool=Depends(get_pool)):
+
+    try:
+        return create_category(
+            pool,
+            name=category.name
+        )
+
+    except errors.UniqueViolation:
+        raise HTTPException(
+            status_code=409,
+            detail="Category already exists"
+        )
+
+
 @router.put("/products/{id}", response_model=ProductResponse)
 async def up_product(
     id: int,
