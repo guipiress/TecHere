@@ -1,23 +1,30 @@
-import os
-from dotenv import load_dotenv
+from decimal import Decimal
 from psycopg.rows import dict_row
-
-load_dotenv()
 
 
 def fetch_products(pool):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            cursor.execute("SELECT * FROM product")
+            cursor.execute(
+                "SELECT * FROM product"
+            )
             products = cursor.fetchall()
 
     return products
 
-def fetch_product_by_id(id, pool):
+
+def fetch_product_by_id(
+    id: int,
+    pool
+):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
-                "SELECT * FROM product WHERE id = %s",
+                """
+                SELECT *
+                FROM product
+                WHERE id = %s
+                """,
                 (id,)
             )
             product = cursor.fetchone()
@@ -25,25 +32,62 @@ def fetch_product_by_id(id, pool):
     return product
 
 
-def post_product(pool, name, purchase_price, sale_price, stock, brand, category_id, description):
+def post_product(
+    pool,
+    *,
+    name: str,
+    purchase_price: Decimal,
+    sale_price: Decimal,
+    stock: int,
+    brand: str,
+    category_id: int,
+    description: str | None
+):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 INSERT INTO product
-                (name, purchase_price, sale_price, stock, brand, category_id, description)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    (
+                        name,
+                        purchase_price,
+                        sale_price,
+                        stock,
+                        brand,
+                        category_id,
+                        description
+                    )
+                VALUES
+                    (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
                 """,
-                (name, purchase_price, sale_price, stock, brand, category_id, description)
+                (
+                    name,
+                    purchase_price,
+                    sale_price,
+                    stock,
+                    brand,
+                    category_id,
+                    description
+                )
             )
             product = cursor.fetchone()
-            connection.commit()
 
     return product
 
 
-def put_product(pool, id, name, purchase_price, sale_price, stock, brand, category_id, description):
+def put_product(
+    pool,
+    id: int,
+    *,
+    name: str,
+    purchase_price: Decimal,
+    sale_price: Decimal,
+    stock: int,
+    brand: str,
+    category_id: int,
+    description: str | None
+):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -71,19 +115,15 @@ def put_product(pool, id, name, purchase_price, sale_price, stock, brand, catego
                     id
                 )
             )
-
             product = cursor.fetchone()
-
-            if product is None:
-                connection.rollback()
-                return None
-
-            connection.commit()
 
     return product
 
 
-def del_product(pool, id):
+def del_product(
+    pool,
+    id: int
+):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -94,16 +134,6 @@ def del_product(pool, id):
                 """,
                 (id,)
             )
-
             product = cursor.fetchone()
 
-            if product is None:
-                connection.rollback()
-                return None
-
-            connection.commit()
-
     return product
-    
-
-

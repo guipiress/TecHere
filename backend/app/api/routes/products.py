@@ -24,35 +24,43 @@ async def get_product(id: int, pool=Depends(get_pool)):
 
 @router.post("/products", status_code=201, response_model=ProductResponse)
 async def create_product(product: ProductCreate, pool=Depends(get_pool)):
-    new_product = post_product(
+        new_product = post_product(
         pool,
-        product.name,
-        product.purchase_price,
-        product.sale_price,
-        product.stock,
-        product.brand,
-        product.category_id,
-        product.description
+        name=product.name,
+        purchase_price=product.purchase_price,
+        sale_price=product.sale_price,
+        stock=product.stock,
+        brand=product.brand,
+        category_id=product.category_id,
+        description=product.description
     )
-
-    return new_product
+        return new_product
 
 
 @router.put("/products/{id}", response_model=ProductResponse)
-async def up_product(id: int, product: ProductUpdate, pool=Depends(get_pool)):
+async def up_product(
+    id: int,
+    product: ProductUpdate,
+    pool=Depends(get_pool)
+):
     result = put_product(
         pool,
         id,
-        product.name,
-        product.purchase_price,
-        product.sale_price,
-        product.stock,
-        product.brand,
-        product.category_id,
-        product.description
+        name=product.name,
+        purchase_price=product.purchase_price,
+        sale_price=product.sale_price,
+        stock=product.stock,
+        brand=product.brand,
+        category_id=product.category_id,
+        description=product.description
     )
+
     if result is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
     return result
 
 
