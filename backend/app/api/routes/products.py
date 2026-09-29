@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.app.dependencies import get_pool
 from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product, del_product
 from backend.app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
-from backend.app.exceptions import CategoryNotFoundError
+from backend.app.exceptions import CategoryNotFoundError, ProductConstraintError
 
 router = APIRouter()
 
