@@ -1,7 +1,7 @@
 from decimal import Decimal
 from psycopg.rows import dict_row
 from psycopg import errors
-from backend.app.exceptions import CategoryNotFoundError
+from backend.app.exceptions import CategoryNotFoundError, ProductConstraintError
 
 def fetch_products(pool):
     with pool.connection() as connection:
@@ -73,10 +73,14 @@ def post_product(
                         description
                     )
                 )
+
                 product = cursor.fetchone()
 
             except errors.ForeignKeyViolation:
                 raise CategoryNotFoundError
+
+            except errors.CheckViolation:
+                raise ProductConstraintError
 
     return product
 

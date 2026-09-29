@@ -23,9 +23,12 @@ async def get_product(id: int, pool=Depends(get_pool)):
         
 
 @router.post("/products", status_code=201, response_model=ProductResponse)
-async def create_product(product: ProductCreate, pool=Depends(get_pool)):
-        try:
-            new_product = post_product(
+async def create_product(
+    product: ProductCreate,
+    pool=Depends(get_pool)
+):
+    try:
+        new_product = post_product(
             pool,
             name=product.name,
             purchase_price=product.purchase_price,
@@ -36,13 +39,19 @@ async def create_product(product: ProductCreate, pool=Depends(get_pool)):
             description=product.description
         )
 
-        except CategoryNotFoundError:
-            raise HTTPException(
-                status_code=404,
-                detail="Category not found"
-            )
+    except CategoryNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail="Category not found"
+        )
 
-        return new_product
+    except ProductConstraintError:
+        raise HTTPException(
+            status_code=400,
+            detail="Product violates database constraints"
+        )
+
+    return new_product
 
 
 @router.post("/categories")
