@@ -1,6 +1,7 @@
 from decimal import Decimal
 from psycopg.rows import dict_row
 from psycopg import errors
+from backend.app.exceptions import CategoryNotFoundError
 
 def fetch_products(pool):
     with pool.connection() as connection:
@@ -74,9 +75,8 @@ def post_product(
                 )
                 product = cursor.fetchone()
 
-            except errors.ForeignKeyViolation as error:
-                print(error)
-                return None
+            except errors.ForeignKeyViolation:
+                raise CategoryNotFoundError
 
     return product
 

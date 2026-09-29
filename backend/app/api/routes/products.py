@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.app.dependencies import get_pool
 from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product, del_product
 from backend.app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
-
+from backend.app.exceptions import CategoryNotFoundError
 
 router = APIRouter()
 
@@ -24,16 +24,24 @@ async def get_product(id: int, pool=Depends(get_pool)):
 
 @router.post("/products", status_code=201, response_model=ProductResponse)
 async def create_product(product: ProductCreate, pool=Depends(get_pool)):
-        new_product = post_product(
-        pool,
-        name=product.name,
-        purchase_price=product.purchase_price,
-        sale_price=product.sale_price,
-        stock=product.stock,
-        brand=product.brand,
-        category_id=product.category_id,
-        description=product.description
-    )
+        try:
+            new_product = post_product(
+            pool,
+            name=product.name,
+            purchase_price=product.purchase_price,
+            sale_price=product.sale_price,
+            stock=product.stock,
+            brand=product.brand,
+            category_id=product.category_id,
+            description=product.description
+        )
+
+        except CategoryNotFoundError:
+            raise HTTPException(
+                status_code=404,
+                detail="Category not found"
+            )
+
         return new_product
 
 
