@@ -1,8 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
+from psycopg import errors
+
 from backend.app.dependencies import get_pool
-from backend.app.database import fetch_products, fetch_product_by_id, post_product, put_product, del_product
+from backend.app.database import (
+    fetch_products,
+    fetch_product_by_id,
+    post_product,
+    post_category,
+    put_product,
+    del_product
+)
 from backend.app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
+from backend.app.schemas.category import CategoryCreate, CategoryResponse
 from backend.app.exceptions import CategoryNotFoundError, ProductConstraintError
+
 
 router = APIRouter()
 
@@ -54,11 +65,13 @@ async def create_product(
     return new_product
 
 
-@router.post("/categories")
-async def create_category(category: CategoryCreate, pool=Depends(get_pool)):
-
+@router.post("/categories", status_code=201, response_model=CategoryResponse)
+async def create_category(
+    category: CategoryCreate,
+    pool=Depends(get_pool)
+):
     try:
-        return create_category(
+        return post_category(
             pool,
             name=category.name
         )
@@ -68,7 +81,7 @@ async def create_category(category: CategoryCreate, pool=Depends(get_pool)):
             status_code=409,
             detail="Category already exists"
         )
-
+    
 
 @router.put("/products/{id}", response_model=ProductResponse)
 async def up_product(
