@@ -1,6 +1,6 @@
 from decimal import Decimal
 from psycopg.rows import dict_row
-
+from psycopg import errors
 
 def fetch_products(pool):
     with pool.connection() as connection:
@@ -45,9 +45,23 @@ def post_product(
 ):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                INSERT INTO product
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO product
+                        (
+                            name,
+                            purchase_price,
+                            sale_price,
+                            stock,
+                            brand,
+                            category_id,
+                            description
+                        )
+                    VALUES
+                        (%s, %s, %s, %s, %s, %s, %s)
+                    RETURNING *
+                    """,
                     (
                         name,
                         purchase_price,
@@ -57,21 +71,12 @@ def post_product(
                         category_id,
                         description
                     )
-                VALUES
-                    (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING *
-                """,
-                (
-                    name,
-                    purchase_price,
-                    sale_price,
-                    stock,
-                    brand,
-                    category_id,
-                    description
                 )
-            )
-            product = cursor.fetchone()
+                product = cursor.fetchone()
+
+            except errors.ForeignKeyViolation as error:
+                print(error)
+                return None
 
     return product
 
