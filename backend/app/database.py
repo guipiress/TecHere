@@ -110,6 +110,19 @@ def create_category(
     return category
 
 
+def fetch_categories(pool):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute("""
+                SELECT *
+                FROM category
+            """)
+
+            categories = cursor.fetchall()
+
+    return categories
+
+
 def put_product(
     pool,
     id: int,

@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from psycopg_pool import ConnectionPool
-
 from backend.app.api.routes.products import router
 
 

@@ -4,9 +4,10 @@ from psycopg import errors
 from backend.app.dependencies import get_pool
 from backend.app.database import (
     fetch_products,
+    fetch_categories,
     fetch_product_by_id,
     post_product,
-    post_category,
+    create_category,
     put_product,
     del_product
 )
@@ -31,7 +32,12 @@ async def get_product(id: int, pool=Depends(get_pool)):
         raise HTTPException(status_code=404, detail="Product not found")
 
     return product
-        
+
+
+@router.get("/categories", response_model=list[CategoryResponse])
+async def get_categories(pool=Depends(get_pool)):
+    return fetch_categories(pool)
+
 
 @router.post("/products", status_code=201, response_model=ProductResponse)
 async def create_product(
@@ -71,7 +77,7 @@ async def create_category(
     pool=Depends(get_pool)
 ):
     try:
-        return post_category(
+        return create_category(
             pool,
             name=category.name
         )
