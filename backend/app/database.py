@@ -123,6 +123,23 @@ def fetch_categories(pool):
     return categories
 
 
+def fetch_category_by_id(id: int, pool):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT *
+                FROM category
+                WHERE id = %s
+                """,
+                (id,)
+            )
+
+            category = cursor.fetchone()
+
+    return category
+
+
 def put_product(
     pool,
     id: int,
