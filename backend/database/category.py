@@ -56,3 +56,25 @@ def fetch_category_by_id(id: int, pool):
             category = cursor.fetchone()
 
     return category
+
+
+def put_category(pool, id: int, *, name: str):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            try:
+                cursor.execute(
+                    """
+                    UPDATE category
+                    SET name = %s
+                    WHERE id = %s
+                    RETURNING *
+                    """,
+                    (name, id)
+                )
+
+                category = cursor.fetchone()
+
+            except errors.UniqueViolation:
+                raise
+
+    return category
