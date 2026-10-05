@@ -2,20 +2,23 @@ from fastapi import APIRouter, Depends, HTTPException
 from psycopg import errors
 
 from backend.app.dependencies import get_pool
-from backend.app.database import (
+from backend.database.product import (
     fetch_products,
     fetch_product_by_id,
-    fetch_categories,
-    fetch_category_by_id,
     post_product,
-    create_category,
     put_product,
     del_product
 )
-from backend.app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
-from backend.app.schemas.category import CategoryCreate, CategoryResponse
-from backend.app.exceptions import CategoryNotFoundError, ProductConstraintError
 
+from backend.app.schemas.product import (
+    ProductResponse,
+    ProductCreate,
+    ProductUpdate
+)
+from backend.app.exceptions import (
+    CategoryNotFoundError,
+    ProductConstraintError
+)
 
 router = APIRouter()
 
@@ -33,24 +36,6 @@ async def get_product(id: int, pool=Depends(get_pool)):
         raise HTTPException(status_code=404, detail="Product not found")
 
     return product
-
-
-@router.get("/categories", response_model=list[CategoryResponse])
-async def get_categories(pool=Depends(get_pool)):
-    return fetch_categories(pool)
-
-
-@router.get("/categories/{id}", response_model=CategoryResponse)
-async def get_category(id: int, pool=Depends(get_pool)):
-    category = fetch_category_by_id(id, pool)
-
-    if category is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Category not found"
-        )
-
-    return category
 
 
 @router.post("/products", status_code=201, response_model=ProductResponse)
@@ -83,24 +68,6 @@ async def create_product(
         )
 
     return new_product
-
-
-@router.post("/categories", status_code=201, response_model=CategoryResponse)
-async def create_category(
-    category: CategoryCreate,
-    pool=Depends(get_pool)
-):
-    try:
-        return create_category(
-            pool,
-            name=category.name
-        )
-
-    except errors.UniqueViolation:
-        raise HTTPException(
-            status_code=409,
-            detail="Category already exists"
-        )
     
 
 @router.put("/products/{id}", response_model=ProductResponse)
