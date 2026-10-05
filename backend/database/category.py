@@ -1,9 +1,8 @@
 from psycopg.rows import dict_row
 from psycopg import errors
-from backend.app.exceptions import CategoryNotFoundError, ProductConstraintError
 
 
-def create_category(
+def post_category(
     pool,
     *,
     name: str
