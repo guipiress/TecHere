@@ -9,4 +9,8 @@ class CategoryResponse(BaseModel):
     id: int
     name: str
 
+class CategoryUpdate(BaseModel):
+    id: int
+    name: str
+    
     

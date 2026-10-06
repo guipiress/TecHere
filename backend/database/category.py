@@ -77,3 +77,20 @@ def put_category(pool, id: int, *, name: str):
                 raise
 
     return category
+
+
+def del_category(pool, id: int):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                DELETE FROM category
+                WHERE id = %s
+                RETURNING *
+                """,
+                (id,)
+            )
+
+            category = cursor.fetchone()
+
+    return category

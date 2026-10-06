@@ -5,11 +5,14 @@ from backend.app.dependencies import get_pool
 from backend.database.category import (
     fetch_categories,
     fetch_category_by_id,
-    post_category
+    post_category,
+    put_category,
+    del_category
 )
 from backend.app.schemas.category import (
     CategoryCreate,
-    CategoryResponse
+    CategoryResponse,
+    CategoryUpdate
 )
 
 router = APIRouter()
@@ -53,3 +56,40 @@ async def create_category(
             status_code=409,
             detail="Category already exists"
         )
+
+
+@router.put("/categories/{id}", response_model=CategoryResponse)
+async def up_category(
+    id: int,
+    category: CategoryUpdate,
+    pool=Depends(get_pool)
+):
+    try:
+        result = put_category(
+            pool,
+            id,
+            name=category.name
+        )
+
+    except errors.UniqueViolation:
+        raise HTTPException(
+            status_code=409,
+            detail="Category already exists"
+        )
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Category not found"
+        )
+
+    return result
+
+
+@router.delete("/categories/{id}", response_model=CategoryResponse)
+async def delete_category(id: int, pool=Depends(get_pool)):
+    result = del_category(pool, id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Category not found") 
+    return result
+ 
