@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from psycopg_pool import ConnectionPool
-from backend.app.api.routes.products import router
+from backend.app.api.routes.products import router as product_router
+from backend.app.api.routes.category import router as category_router
 
 
 load_dotenv()
@@ -31,7 +32,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(router)
+app.include_router(product_router)
+app.include_router(category_router)
 
 
 @app.get("/")
