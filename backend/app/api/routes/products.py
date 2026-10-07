@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from psycopg import errors
 
 from backend.app.dependencies import get_pool
-from backend.database.product import (
+from backend.repository.product import (
     fetch_products,
     fetch_product_by_id,
     post_product,
