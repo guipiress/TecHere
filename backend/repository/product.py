@@ -207,12 +207,33 @@ def del_product(
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
-                DELETE FROM product
-                WHERE id = %s
-                RETURNING *
+                SELECT
+                    product.id,
+                    product.name,
+                    product.purchase_price,
+                    product.sale_price,
+                    product.stock,
+                    product.brand,
+                    product.category_id,
+                    product.description,
+                    category.name AS category_name
+                FROM product
+                INNER JOIN category
+                    ON product.category_id = category.id
+                WHERE product.id = %s
                 """,
                 (id,)
             )
             product = cursor.fetchone()
+            if product is None:
+                return None
+
+            cursor.execute(
+                """
+                DELETE FROM product
+                WHERE id = %s
+                """,
+                (id,)
+            )
 
     return product
