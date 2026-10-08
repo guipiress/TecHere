@@ -73,18 +73,16 @@ def post_product(
             try:
                 cursor.execute(
                     """
-                    INSERT INTO product
-                        (
-                            name,
-                            purchase_price,
-                            sale_price,
-                            stock,
-                            brand,
-                            category_id,
-                            description
-                        )
-                    VALUES
-                        (%s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO product (
+                        name,
+                        purchase_price,
+                        sale_price,
+                        stock,
+                        brand,
+                        category_id,
+                        description
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING *
                     """,
                     (
@@ -96,6 +94,29 @@ def post_product(
                         category_id,
                         description
                     )
+                )
+
+                product = cursor.fetchone()
+                product_id = product["id"]
+
+                cursor.execute(
+                    """
+                    SELECT
+                        product.id,
+                        product.name,
+                        product.purchase_price,
+                        product.sale_price,
+                        product.stock,
+                        product.brand,
+                        product.category_id,
+                        product.description,
+                        category.name AS category_name
+                    FROM product
+                    INNER JOIN category
+                        ON product.category_id = category.id
+                    WHERE product.id = %s
+                    """,
+                    (product_id,)
                 )
 
                 product = cursor.fetchone()
