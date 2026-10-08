@@ -20,12 +20,13 @@ class ProductUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
 
 class ProductResponse(BaseModel):
-    id : int
+    id: int
     name: str
     purchase_price: Decimal
     sale_price: Decimal
     stock: int
     brand: str
     category_id: int
+    category_name: str
     description: str | None = None
 

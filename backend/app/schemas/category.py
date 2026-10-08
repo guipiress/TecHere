@@ -9,6 +9,7 @@ class CategoryResponse(BaseModel):
     id: int
     name: str
 
+
 class CategoryUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     

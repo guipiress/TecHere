@@ -8,7 +8,19 @@ def fetch_products(pool):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
-                "SELECT * FROM product"
+             """SELECT
+                    product.id,
+                    product.name,
+                    product.purchase_price,
+                    product.sale_price,
+                    product.stock,
+                    product.brand,
+                    product.category_id,
+                    product.description,
+                    category.name AS category_name
+                FROM product
+                INNER JOIN category
+                    ON product.category_id = category.id;"""
             )
             products = cursor.fetchall()
 
@@ -22,10 +34,21 @@ def fetch_product_by_id(
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
-                """
-                SELECT *
+                
+             """SELECT 
+                    product.id,
+                    product.name,
+                    product.purchase_price,
+                    product.sale_price,
+                    product.stock,
+                    product.brand,
+                    product.category_id,
+                    product.description,
+                    category.name AS category_name
                 FROM product
-                WHERE id = %s
+                INNER JOIN category
+                    ON product.category_id = category.id
+                WHERE product.id = %s
                 """,
                 (id,)
             )
