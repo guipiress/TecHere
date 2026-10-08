@@ -171,6 +171,31 @@ def put_product(
             )
             product = cursor.fetchone()
 
+            if product is None:
+                return None
+
+            product_id = product["id"]
+            
+            cursor.execute(
+            """
+            SELECT
+                product.id,
+                product.name,
+                product.purchase_price,
+                product.sale_price,
+                product.stock,
+                product.brand,
+                product.category_id,
+                product.description,
+                category.name AS category_name
+            FROM product
+            INNER JOIN category
+                ON product.category_id = category.id
+            WHERE product.id = %s""",(product_id,)
+            )
+            
+            product = cursor.fetchone()
+
     return product
 
 
