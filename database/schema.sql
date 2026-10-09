@@ -2,18 +2,24 @@
 --USERS
 --===============================
 CREATE TABLE users (
-id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-name VARCHAR(50) NOT NULL,
-role VARCHAR(20) NOT NULL
-CHECK (role IN ('ADMIN', 'EMPLOYEE', 'CUSTOMER')      --roles: ADMIN, EMPLOYEE, CUSTOMER
-),
-email VARCHAR(255) UNIQUE NOT NULL,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-password_hash VARCHAR(255) NOT NULL,
-telephone VARCHAR(20) NOT NULL,
-cpf CHAR(11) UNIQUE NOT NULL
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER'
+        CHECK (role IN ('ADMIN', 'EMPLOYEE', 'CUSTOMER')),
+    telephone VARCHAR(20),
+    cpf CHAR(11) UNIQUE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT users_name_not_blank
+        CHECK (length(trim(name)) > 0),
+    CONSTRAINT users_email_not_blank
+        CHECK (length(trim(email)) > 0),
+    CONSTRAINT users_cpf_digits
+        CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$')
 );
-
 
 --===============================
 --ADDRESS
