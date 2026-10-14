@@ -4,3 +4,11 @@ class CategoryNotFoundError(Exception):
 
 class ProductConstraintError(Exception):
     pass
+
+
+class UserEmailAlreadyExistsError(Exception):
+    pass
+
+
+class UserCPFAlreadyExistsError(Exception):
+    pass
