@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from psycopg_pool import ConnectionPool
 from backend.app.api.routes.products import router as product_router
 from backend.app.api.routes.category import router as category_router
-
+from backend.app.api.routes import users
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(product_router)
 app.include_router(category_router)
-
+app.include_router(users.router)
 
 @app.get("/")
 async def root():

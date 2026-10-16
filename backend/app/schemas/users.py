@@ -17,8 +17,8 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     role: str
-    telephone: str | None
-    cpf: str | None
+    telephone: str | None = None
+    cpf: str | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
