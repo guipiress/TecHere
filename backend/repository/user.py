@@ -6,6 +6,33 @@ from backend.app.exceptions import (
     UserCPFAlreadyExistsError,
 )
 
+def fetch_user_by_id(
+    id: int,
+    pool
+):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    email,
+                    role,
+                    telephone,
+                    cpf,
+                    is_active,
+                    created_at,
+                    updated_at
+                FROM public.users
+                WHERE id = %s
+                """,
+                (id,)
+            )
+            user = cursor.fetchone()
+
+    return user
+
 
 def post_user(
     pool,

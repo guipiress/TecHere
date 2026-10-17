@@ -7,9 +7,19 @@ from backend.app.exceptions import (
     UserCPFAlreadyExistsError,
 )
 from backend.app.schemas.users import UserCreate, UserResponse
-from backend.repository.user import post_user
+from backend.repository.user import post_user, fetch_user_by_id
 
 router = APIRouter()
+
+
+@router.get("/users/{id}", response_model=UserResponse)
+async def get_user_by_id(id: int, pool=Depends(get_pool)):
+    user = fetch_user_by_id(id,pool)
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
 
 
 @router.post("/users", status_code=201, response_model=UserResponse)
