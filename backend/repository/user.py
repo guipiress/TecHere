@@ -1,4 +1,4 @@
-from psycopg import errors
+from psycopg import errors, sql
 from psycopg.rows import dict_row
 
 from backend.app.exceptions import (
@@ -120,4 +120,53 @@ def post_user(
 
                 raise
 
+    return user
+
+
+def put_user(pool, user_id: int, data: dict):
+    
+    allowed_fields = {"name", "email", "telephone"}
+
+    if not data:
+        raise ValueError("Nenhum campo informado para atualização.")
+
+    if not set(data).issubset(allowed_fields):
+        raise ValueError("Campo não permitido para atualização.")
+
+    set_clause = sql.SQL(", ").join(
+        sql.SQL("{} = %s").format(sql.Identifier(field))
+        for field in data
+    )
+
+    query = sql.SQL("""
+        UPDATE public.users
+        SET {}
+        WHERE id = %s
+        RETURNING
+            id,
+            name,
+            email,
+            role,
+            telephone,
+            cpf,
+            is_active,
+            created_at,
+            updated_at
+    """).format(set_clause)
+
+    values = list(data.values())
+    values.append(user_id)
+
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            try:
+                cursor.execute(query, values)
+                user = cursor.fetchone()
+            except errors.UniqueViolation as exc:
+                if exc.diag.constraint_name == "users_email_key":
+                    raise UserEmailAlreadyExistsError(
+                    "Este e-mail já está cadastrado."
+                    ) from exc
+                raise
+            
     return user

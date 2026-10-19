@@ -22,3 +22,9 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class UserUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=150)
+    email: EmailStr | None = None
+    telephone: str | None = Field(default=None, max_length=20)

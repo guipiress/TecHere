@@ -6,8 +6,8 @@ from backend.app.exceptions import (
     UserEmailAlreadyExistsError,
     UserCPFAlreadyExistsError,
 )
-from backend.app.schemas.users import UserCreate, UserResponse
-from backend.repository.user import post_user, fetch_user_by_id, fetch_users
+from backend.app.schemas.users import UserCreate, UserResponse, UserUpdate
+from backend.repository.user import post_user, fetch_user_by_id, fetch_users, put_user
 
 router = APIRouter()
 
@@ -63,3 +63,46 @@ async def create_user(
         )
 
     return new_user
+
+
+@router.put("/users/{id}", response_model=UserResponse)
+async def update_user(
+    id: int,
+    user: UserUpdate,
+    pool=Depends(get_pool),
+):
+    data = user.model_dump(exclude_unset=True)
+
+    if not data:
+        raise HTTPException(
+            status_code=422,
+            detail="Informe pelo menos um campo para atualizar.",
+        )
+
+    if "name" in data and data["name"] is None:
+        raise HTTPException(
+            status_code=422,
+            detail="O nome não pode ser nulo.",
+        )
+
+    if "email" in data and data["email"] is None:
+        raise HTTPException(
+            status_code=422,
+            detail="O e-mail não pode ser nulo.",
+        )
+
+    try:
+        updated_user = put_user(pool, id, data)
+    except UserEmailAlreadyExistsError:
+        raise HTTPException(
+            status_code=409,
+            detail="Este e-mail já está cadastrado.",
+        )
+
+    if updated_user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuário não encontrado.",
+        )
+
+    return updated_user
