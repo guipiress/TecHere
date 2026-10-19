@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-
+from fastapi import Query
 from backend.app.dependencies import get_pool
 from backend.app.security import hash_password
 from backend.app.exceptions import (
@@ -7,9 +7,20 @@ from backend.app.exceptions import (
     UserCPFAlreadyExistsError,
 )
 from backend.app.schemas.users import UserCreate, UserResponse
-from backend.repository.user import post_user, fetch_user_by_id
+from backend.repository.user import post_user, fetch_user_by_id, fetch_users
 
 router = APIRouter()
+
+
+
+@router.get("/users", response_model=list[UserResponse])
+async def get_users(
+    pool=Depends(get_pool),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    users = fetch_users(pool, limit, offset)
+    return users
 
 
 @router.get("/users/{id}", response_model=UserResponse)
