@@ -170,3 +170,23 @@ def put_user(pool, user_id: int, data: dict):
                 raise
             
     return user
+
+
+from psycopg.rows import dict_row
+
+
+def delete_user(pool, user_id: int):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                DELETE FROM public.users
+                WHERE id = %s
+                RETURNING id, name, email
+                """,
+                (user_id,),
+            )
+
+            deleted_user = cursor.fetchone()
+
+    return deleted_user

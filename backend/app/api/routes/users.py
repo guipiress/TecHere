@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi import Query
 from backend.app.dependencies import get_pool
 from backend.app.security import hash_password
@@ -7,7 +7,7 @@ from backend.app.exceptions import (
     UserCPFAlreadyExistsError,
 )
 from backend.app.schemas.users import UserCreate, UserResponse, UserUpdate
-from backend.repository.user import post_user, fetch_user_by_id, fetch_users, put_user
+from backend.repository.user import post_user, fetch_user_by_id, fetch_users, put_user, delete_user
 
 router = APIRouter()
 
@@ -106,3 +106,24 @@ async def update_user(
         )
 
     return updated_user
+
+
+from fastapi import Depends, HTTPException, status
+
+@router.delete("/users/{id}", status_code=status.HTTP_200_OK)
+async def remove_user(
+    id: int,
+    pool=Depends(get_pool),
+):
+    deleted_user = delete_user(pool, id)
+
+    if deleted_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado.",
+        )
+
+    return {
+        "message": "Usuário excluído com sucesso.",
+        "user": deleted_user,
+    }
