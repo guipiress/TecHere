@@ -74,3 +74,38 @@ def test_update_user_invalid_email(client):
 
     assert response.status_code == 422
     mock_put_user.assert_not_called()
+
+
+
+def test_update_user_duplicate_email(client):
+    payload = {
+        "email": "existente@example.com",
+    }
+
+    with patch(
+        "backend.app.api.routes.users.put_user",
+        side_effect=UserEmailAlreadyExistsError(),
+    ) as mock_put_user:
+        response = client.put("/users/1", json=payload)
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Este e-mail já está cadastrado."
+    }
+
+    mock_put_user.assert_called_once()
+
+
+
+def test_update_user_empty_name(client):
+    payload = {
+        "name": "",
+    }
+
+    with patch(
+        "backend.app.api.routes.users.put_user"
+    ) as mock_put_user:
+        response = client.put("/users/1", json=payload)
+
+    assert response.status_code == 422
+    mock_put_user.assert_not_called()

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi import Query
 from backend.app.dependencies import get_pool
 from backend.app.security import hash_password
@@ -107,8 +107,6 @@ async def update_user(
 
     return updated_user
 
-
-from fastapi import Depends, HTTPException, status
 
 @router.delete("/users/{id}", status_code=status.HTTP_200_OK)
 async def remove_user(
