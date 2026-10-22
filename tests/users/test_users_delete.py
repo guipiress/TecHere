@@ -50,3 +50,5 @@ def test_delete_user_not_found(client):
     }
 
     mock_delete_user.assert_called_once()
+
+
