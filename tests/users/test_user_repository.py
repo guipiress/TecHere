@@ -443,4 +443,51 @@ def test_put_user_propagates_unexpected_unique_violation():
 
 
 
+def test_delete_user_returns_deleted_user():
+    pool = MagicMock()
 
+    deleted_user = {
+        "id": 7,
+        "name": "Ana",
+        "email": "ana@example.com",
+    }
+
+    connection = pool.connection.return_value.__enter__.return_value
+    cursor = connection.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = deleted_user
+
+    result = delete_user(pool, 7)
+
+    assert result == deleted_user
+
+    cursor.execute.assert_called_once()
+    query, params = cursor.execute.call_args.args
+
+    assert "DELETE FROM public.users" in query
+    assert "WHERE id = %s" in query
+    assert "RETURNING id, name, email" in query
+    assert params == (7,)
+
+    cursor.fetchone.assert_called_once_with()
+
+
+
+def test_delete_user_returns_none_when_user_not_found():
+    pool = MagicMock()
+
+    connection = pool.connection.return_value.__enter__.return_value
+    cursor = connection.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = None
+
+    result = delete_user(pool, 999)
+
+    assert result is None
+
+    cursor.execute.assert_called_once()
+    query, params = cursor.execute.call_args.args
+
+    assert "DELETE FROM public.users" in query
+    assert "WHERE id = %s" in query
+    assert params == (999,)
+
+    cursor.fetchone.assert_called_once_with()
