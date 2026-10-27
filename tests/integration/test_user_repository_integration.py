@@ -1,6 +1,6 @@
 from uuid import uuid4
 from backend.repository.user import fetch_users, fetch_user_by_id, post_user, put_user, delete_user
-
+from backend.app.exceptions import UserEmailAlreadyExistsError, UserCPFAlreadyExistsError
 
 def test_fetch_users_returns_user_from_database(db_pool):
     email = f"integration-{uuid4().hex}@example.com"
@@ -197,3 +197,117 @@ def test_delete_user_removes_user_from_database(db_pool):
                         "DELETE FROM public.users WHERE id = %s",
                         (user["id"],),
                     )
+
+
+
+def test_post_user_rejects_duplicate_email_in_database(db_pool):
+    email = f"integration-{uuid4().hex}@example.com"
+    user = None
+
+    try:
+        user = post_user(
+            db_pool,
+            name="Original Integration User",
+            email=email,
+            password_hash="test-hash",
+            telephone=None,
+            cpf=None,
+        )
+
+        try:
+            post_user(
+                db_pool,
+                name="Duplicate Integration User",
+                email=email,
+                password_hash="test-hash",
+                telephone=None,
+                cpf=None,
+            )
+        except UserEmailAlreadyExistsError:
+            pass
+        else:
+            raise AssertionError(
+                "Era esperado um erro para e-mail duplicado."
+            )
+
+        saved_user = fetch_user_by_id(user["id"], db_pool)
+
+        assert saved_user is not None
+        assert saved_user["name"] == "Original Integration User"
+        assert saved_user["email"] == email
+
+    finally:
+        if user is not None:
+            with db_pool.connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM public.users WHERE id = %s",
+                        (user["id"],),
+                    )
+
+
+
+def test_post_user_rejects_duplicate_cpf_in_database(db_pool):
+    email = f"integration-{uuid4().hex}@example.com"
+    duplicate_email = f"integration-{uuid4().hex}@example.com"
+    cpf = "12345678901"
+    user = None
+
+    try:
+        user = post_user(
+            db_pool,
+            name="Original Integration User",
+            email=email,
+            password_hash="test-hash",
+            telephone=None,
+            cpf=cpf,
+        )
+
+        try:
+            post_user(
+                db_pool,
+                name="Duplicate CPF Integration User",
+                email=duplicate_email,
+                password_hash="test-hash",
+                telephone=None,
+                cpf=cpf,
+            )
+        except UserCPFAlreadyExistsError:
+            pass
+        else:
+            raise AssertionError(
+                "Era esperado um erro para CPF duplicado."
+            )
+
+        saved_user = fetch_user_by_id(user["id"], db_pool)
+
+        assert saved_user is not None
+        assert saved_user["cpf"] == cpf
+        assert saved_user["email"] == email
+
+    finally:
+        if user is not None:
+            with db_pool.connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM public.users WHERE id = %s",
+                        (user["id"],),
+                    )
+
+
+
+def test_delete_user_returns_none_for_nonexistent_user(db_pool):
+    deleted_user = delete_user(db_pool, 2147483647)
+
+    assert deleted_user is None
+
+
+
+def test_put_user_returns_none_for_nonexistent_user(db_pool):
+    updated_user = put_user(
+        db_pool,
+        2147483647,
+        {"name": "Updated Nonexistent User"},
+    )
+
+    assert updated_user is None
