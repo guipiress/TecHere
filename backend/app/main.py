@@ -8,7 +8,28 @@ from backend.app.api.routes.products import router as product_router
 from backend.app.api.routes.category import router as category_router
 from backend.app.api.routes import users
 
+
 load_dotenv()
+
+REQUIRED_DB_VARS = (
+    "DB_HOST",
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASSWORD",
+    "DB_PORT",
+)
+
+missing_vars = [
+    name for name in REQUIRED_DB_VARS
+    if not os.getenv(name)
+]
+
+if missing_vars:
+    raise RuntimeError(
+        "Variáveis de ambiente obrigatórias ausentes: "
+        + ", ".join(missing_vars)
+    )
+
 
 
 @asynccontextmanager
@@ -22,12 +43,17 @@ async def lifespan(app: FastAPI):
             f"port={os.getenv('DB_PORT')}"
         ),
         min_size=1,
-        max_size=10
-    )
+        max_size=10,
+        open=False,
+        )
 
-    yield
+    app.state.pool.open()
+    app.state.pool.wait()
 
-    app.state.pool.close()
+    try:
+        yield
+    finally:
+        app.state.pool.close()
 
 
 app = FastAPI(lifespan=lifespan)
