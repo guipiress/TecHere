@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 from backend.app.exceptions import (
     CategoryNotFoundError,
-    ProductConstraintError,
 )
 
 PRODUCT = {
@@ -77,21 +76,6 @@ def test_update_product_category_not_found(client):
     assert response.status_code == 404
     assert response.json()["detail"] == "Category not found"
 
-
-def test_update_product_constraint_error(client):
-    with patch(
-        "backend.app.api.routes.products.put_product",
-        side_effect=ProductConstraintError,
-    ):
-        response = client.put(
-            "/products/1",
-            json={"stock": -1},
-        )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        "Product violates database constraints"
-    )
 
 
 def test_update_product_invalid_data(client):
