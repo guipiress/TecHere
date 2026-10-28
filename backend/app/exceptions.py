@@ -12,3 +12,15 @@ class UserEmailAlreadyExistsError(Exception):
 
 class UserCPFAlreadyExistsError(Exception):
     pass
+
+
+class OrderConstraintError(Exception):
+    pass
+
+
+class ProductNotFoundError(Exception):
+    pass
+
+
+class InsufficientStockError(Exception):
+    pass
