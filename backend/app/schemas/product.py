@@ -10,14 +10,16 @@ class ProductCreate(BaseModel):
     category_id: int = Field(gt=0)
     description: str | None = Field(default=None, max_length=500)
 
+
 class ProductUpdate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    purchase_price: Decimal = Field(ge=0)
-    sale_price: Decimal = Field(ge=0)
-    stock: int = Field(ge=0)
-    brand: str = Field(min_length=1, max_length=100)
-    category_id: int = Field(gt=0)
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    purchase_price: Decimal | None = Field(default=None, ge=0)
+    sale_price: Decimal | None = Field(default=None, ge=0)
+    stock: int | None = Field(default=None, ge=0)
+    brand: str | None = Field(default=None, min_length=1, max_length=100)
+    category_id: int | None = Field(default=None, gt=0)
     description: str | None = Field(default=None, max_length=500)
+
 
 class ProductResponse(BaseModel):
     id: int

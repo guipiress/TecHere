@@ -130,73 +130,78 @@ def post_product(
     return product
 
 
-def put_product(
-    pool,
-    id: int,
-    *,
-    name: str,
-    purchase_price: Decimal,
-    sale_price: Decimal,
-    stock: int,
-    brand: str,
-    category_id: int,
-    description: str | None
-):
+
+def put_product(pool, id: int, **data):
+    allowed_fields = {
+        "name",
+        "purchase_price",
+        "sale_price",
+        "stock",
+        "brand",
+        "category_id",
+        "description",
+    }
+
+    if not data:
+        raise ValueError("At least one field must be provided")
+
+    if not data.keys() <= allowed_fields:
+        raise ValueError("Invalid product fields")
+
+    from psycopg import sql
+
+    fields = list(data.keys())
+
+    query = sql.SQL("""
+        UPDATE product
+        SET {assignments}
+        WHERE id = %s
+        RETURNING id
+    """).format(
+        assignments=sql.SQL(", ").join(
+            sql.SQL("{} = %s").format(sql.Identifier(field))
+            for field in fields
+        )
+    )
+
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                UPDATE product
-                SET
-                    name = %s,
-                    purchase_price = %s,
-                    sale_price = %s,
-                    stock = %s,
-                    brand = %s,
-                    category_id = %s,
-                    description = %s
-                WHERE id = %s
-                RETURNING *
-                """,
-                (
-                    name,
-                    purchase_price,
-                    sale_price,
-                    stock,
-                    brand,
-                    category_id,
-                    description,
-                    id
+            try:
+                cursor.execute(
+                    query,
+                    (*[data[field] for field in fields], id),
                 )
-            )
-            product = cursor.fetchone()
+                result = cursor.fetchone()
 
-            if product is None:
-                return None
+                if result is None:
+                    return None
 
-            product_id = product["id"]
-            
-            cursor.execute(
-            """
-            SELECT
-                product.id,
-                product.name,
-                product.purchase_price,
-                product.sale_price,
-                product.stock,
-                product.brand,
-                product.category_id,
-                product.description,
-                category.name AS category_name
-            FROM product
-            INNER JOIN category
-                ON product.category_id = category.id
-            WHERE product.id = %s""",(product_id,)
-            )
-            
-            product = cursor.fetchone()
+                cursor.execute(
+                    """
+                    SELECT
+                        product.id,
+                        product.name,
+                        product.purchase_price,
+                        product.sale_price,
+                        product.stock,
+                        product.brand,
+                        product.category_id,
+                        product.description,
+                        category.name AS category_name
+                    FROM product
+                    INNER JOIN category
+                        ON product.category_id = category.id
+                    WHERE product.id = %s
+                    """,
+                    (result["id"],),
+                )
+                return cursor.fetchone()
 
-    return product
+            except errors.ForeignKeyViolation:
+                raise CategoryNotFoundError
+            except errors.CheckViolation:
+                raise ProductConstraintError
+
 
 
 def del_product(

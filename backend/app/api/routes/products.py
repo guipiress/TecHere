@@ -70,23 +70,35 @@ async def create_product(
     return new_product
     
 
+
 @router.put("/products/{id}", response_model=ProductResponse)
 async def up_product(
     id: int,
     product: ProductUpdate,
     pool=Depends(get_pool)
 ):
-    result = put_product(
-        pool,
-        id,
-        name=product.name,
-        purchase_price=product.purchase_price,
-        sale_price=product.sale_price,
-        stock=product.stock,
-        brand=product.brand,
-        category_id=product.category_id,
-        description=product.description
-    )
+    data = product.model_dump(exclude_unset=True)
+
+    if not data:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one field must be provided"
+        )
+
+    try:
+        result = put_product(pool, id, **data)
+
+    except CategoryNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail="Category not found"
+        )
+
+    except ProductConstraintError:
+        raise HTTPException(
+            status_code=400,
+            detail="Product violates database constraints"
+        )
 
     if result is None:
         raise HTTPException(
@@ -95,6 +107,7 @@ async def up_product(
         )
 
     return result
+
 
 
 @router.delete("/products/{id}", response_model=ProductResponse)
