@@ -5,8 +5,9 @@ from backend.app.exceptions import (
     OrderConstraintError,
     ProductNotFoundError,
     InsufficientStockError,
+    OrderNotFoundError,
 )
-from backend.repository.order import post_order, fetch_orders
+from backend.repository.order import post_order, fetch_orders, fetch_order_by_id
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -53,3 +54,19 @@ def create_order(order_data: OrderCreate, request: Request):
 def get_orders(request: Request):
     orders = fetch_orders(request.app.state.pool)
     return orders
+
+
+@router.get("/{order_id}", response_model=OrderResponse)
+def get_order_by_id(order_id: int, request: Request):
+    try:
+        order = fetch_order_by_id(
+            request.app.state.pool,
+            order_id,
+        )
+        return order
+
+    except OrderNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found",
+        ) from exc

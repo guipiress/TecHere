@@ -24,3 +24,7 @@ class ProductNotFoundError(Exception):
 
 class InsufficientStockError(Exception):
     pass
+
+
+class OrderNotFoundError(Exception):
+    pass

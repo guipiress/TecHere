@@ -148,3 +148,44 @@ def fetch_orders(pool):
             orders = cursor.fetchall()
 
     return orders
+
+
+
+def fetch_order_by_id(pool, order_id: int):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    o.id,
+                    o.user_id,
+                    o.address_id,
+                    o.status,
+                    o.total_price,
+                    o.created_at,
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'id', oi.id,
+                                'order_id', oi.order_id,
+                                'product_id', oi.product_id,
+                                'quantity', oi.quantity,
+                                'unit_price', oi.unit_price
+                            )
+                        ) FILTER (WHERE oi.id IS NOT NULL),
+                        '[]'::json
+                    ) AS items
+                FROM orders o
+                LEFT JOIN order_items oi ON o.id = oi.order_id
+                WHERE o.id = %s
+                GROUP BY o.id;
+                """,
+                (order_id,),
+            )
+
+            order = cursor.fetchone()
+
+            if order is None:
+                raise OrderNotFoundError
+
+    return order
