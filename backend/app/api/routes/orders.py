@@ -6,7 +6,7 @@ from backend.app.exceptions import (
     ProductNotFoundError,
     InsufficientStockError,
 )
-from backend.repository.order import post_order
+from backend.repository.order import post_order, fetch_orders
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -46,3 +46,10 @@ def create_order(order_data: OrderCreate, request: Request):
             status_code=status.HTTP_409_CONFLICT,
             detail="Insufficient stock for one or more products",
         ) from exc
+
+
+
+@router.get("", response_model=list[OrderResponse])
+def get_orders(request: Request):
+    orders = fetch_orders(request.app.state.pool)
+    return orders

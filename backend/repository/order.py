@@ -110,3 +110,41 @@ def post_order(pool, *, user_id: int, address_id: int, items: list[dict]):
                 order["items"] = order_items
 
     return order
+
+
+
+def fetch_orders(pool):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    o.id,
+                    o.user_id,
+                    o.address_id,
+                    o.status,
+                    o.total_price,
+                    o.created_at,
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'id', oi.id,
+                                'order_id', oi.order_id,
+                                'product_id', oi.product_id,
+                                'quantity', oi.quantity,
+                                'unit_price', oi.unit_price
+                            )
+                        ) FILTER (WHERE oi.id IS NOT NULL),
+                        '[]'
+                    ) AS items
+                FROM orders o
+                LEFT JOIN order_items oi
+                    ON o.id = oi.order_id
+                GROUP BY o.id
+                ORDER BY o.created_at DESC;
+                """
+            )
+
+            orders = cursor.fetchall()
+
+    return orders
