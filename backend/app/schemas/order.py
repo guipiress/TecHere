@@ -31,3 +31,9 @@ class OrderResponse(BaseModel):
     total_price: Decimal
     created_at: datetime
     items: list[OrderItemResponse]
+
+
+class OrderStatusUpdate(BaseModel):
+    status: str = Field(
+        pattern="^(PENDING|PAID|CANCELLED)$"
+    )

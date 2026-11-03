@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Request, HTTPException, status
 
-from backend.app.schemas.order import OrderCreate, OrderResponse
+from backend.app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate
 from backend.app.exceptions import (
     OrderConstraintError,
     ProductNotFoundError,
     InsufficientStockError,
     OrderNotFoundError,
 )
-from backend.repository.order import post_order, fetch_orders, fetch_order_by_id
+from backend.repository.order import post_order, fetch_orders, fetch_order_by_id, update_order_status
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -69,4 +69,31 @@ def get_order_by_id(order_id: int, request: Request):
         raise HTTPException(
             status_code=404,
             detail="Order not found",
+        ) from exc
+
+
+
+@router.put("/{order_id}/status", response_model=OrderResponse)
+def change_order_status(
+    order_id: int,
+    status_data: OrderStatusUpdate,
+    request: Request,
+):
+    try:
+        return update_order_status(
+            request.app.state.pool,
+            order_id,
+            status_data.status,
+        )
+
+    except OrderNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found",
+        ) from exc
+
+    except OrderConstraintError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
         ) from exc

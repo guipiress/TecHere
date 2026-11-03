@@ -3,6 +3,7 @@ from backend.app.exceptions import (
     OrderConstraintError,
     ProductNotFoundError,
     InsufficientStockError,
+    OrderNotFoundError,
 )
 
 
@@ -189,3 +190,77 @@ def fetch_order_by_id(pool, order_id: int):
                 raise OrderNotFoundError
 
     return order
+
+
+
+def update_order_status(pool, order_id: int, new_status: str):
+    with pool.connection() as connection:
+        with connection.transaction():
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, status
+                    FROM orders
+                    WHERE id = %s
+                    FOR UPDATE;
+                    """,
+                    (order_id,),
+                )
+
+                order = cursor.fetchone()
+
+                if order is None:
+                    raise OrderNotFoundError
+
+                current_status = order["status"]
+
+                allowed_transitions = {
+                    "PENDING": {"PAID", "CANCELLED"},
+                    "PAID": set(),
+                    "CANCELLED": set(),
+                }
+
+                if new_status not in allowed_transitions[current_status]:
+                    raise OrderConstraintError(
+                        f"Cannot change order status from {current_status} to {new_status}"
+                    )
+
+                if new_status == "CANCELLED":
+                    cursor.execute(
+                        """
+                        UPDATE product AS p
+                        SET stock = p.stock + oi.quantity
+                        FROM order_items AS oi
+                        WHERE oi.order_id = %s
+                        AND oi.product_id = p.id;
+                        """,
+                        (order_id,),
+                    )
+
+                cursor.execute(
+                    """
+                    UPDATE orders
+                    SET status = %s
+                    WHERE id = %s
+                    RETURNING
+                        id, user_id, address_id, status,
+                        total_price, created_at;
+                    """,
+                    (new_status, order_id),
+                )
+
+                updated_order = cursor.fetchone()
+
+                cursor.execute(
+                    """
+                    SELECT
+                        id, order_id, product_id, quantity, unit_price
+                    FROM order_items
+                    WHERE order_id = %s;
+                    """,
+                    (order_id,),
+                )
+
+                updated_order["items"] = cursor.fetchall()
+
+    return updated_order
