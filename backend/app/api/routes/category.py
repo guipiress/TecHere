@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from psycopg import errors
 
 from backend.app.dependencies import get_pool
@@ -19,12 +19,16 @@ router = APIRouter()
 
 
 @router.get("/categories", response_model=list[CategoryResponse])
-async def get_categories(pool=Depends(get_pool)):
-    return fetch_categories(pool)
+def get_categories(
+    pool=Depends(get_pool),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    return fetch_categories(pool, limit, offset)
 
 
 @router.get("/categories/{id}", response_model=CategoryResponse)
-async def get_category(id: int, pool=Depends(get_pool)):
+def get_category(id: int, pool=Depends(get_pool)):
     category = fetch_category_by_id(id, pool)
 
     if category is None:
@@ -41,7 +45,7 @@ async def get_category(id: int, pool=Depends(get_pool)):
     status_code=201,
     response_model=CategoryResponse
 )
-async def create_category(
+def create_category(
     category: CategoryCreate,
     pool=Depends(get_pool)
 ):
@@ -59,7 +63,7 @@ async def create_category(
 
 
 @router.put("/categories/{id}", response_model=CategoryResponse)
-async def up_category(
+def up_category(
     id: int,
     category: CategoryUpdate,
     pool=Depends(get_pool)
@@ -87,7 +91,7 @@ async def up_category(
 
 
 @router.delete("/categories/{id}", response_model=CategoryResponse)
-async def delete_category(id: int, pool=Depends(get_pool)):
+def delete_category(id: int, pool=Depends(get_pool)):
     result = del_category(pool, id)
     if result is None:
         raise HTTPException(status_code=404, detail="Category not found") 

@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
-from psycopg import errors
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.app.dependencies import get_pool
 from backend.repository.product import (
@@ -24,12 +23,16 @@ router = APIRouter()
 
 
 @router.get("/products", response_model=list[ProductResponse])
-async def get_products(pool = Depends(get_pool)):
-    return fetch_products(pool)
+def get_products(
+    pool=Depends(get_pool),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    return fetch_products(pool, limit, offset)
 
 
 @router.get("/products/{id}", response_model=ProductResponse)
-async def get_product(id: int, pool=Depends(get_pool)):
+def get_product(id: int, pool=Depends(get_pool)):
     product = fetch_product_by_id(id, pool)
 
     if product is None:
@@ -39,7 +42,7 @@ async def get_product(id: int, pool=Depends(get_pool)):
 
 
 @router.post("/products", status_code=201, response_model=ProductResponse)
-async def create_product(
+def create_product(
     product: ProductCreate,
     pool=Depends(get_pool)
 ):
@@ -72,7 +75,7 @@ async def create_product(
 
 
 @router.put("/products/{id}", response_model=ProductResponse)
-async def up_product(
+def up_product(
     id: int,
     product: ProductUpdate,
     pool=Depends(get_pool)
@@ -83,6 +86,19 @@ async def up_product(
         raise HTTPException(
             status_code=400,
             detail="At least one field must be provided"
+        )
+
+    # Only "description" is nullable in the database. An explicit null for any
+    # other field would otherwise hit a NOT NULL constraint.
+    null_fields = [
+        field for field, value in data.items()
+        if value is None and field != "description"
+    ]
+
+    if null_fields:
+        raise HTTPException(
+            status_code=422,
+            detail="Fields cannot be null: " + ", ".join(sorted(null_fields))
         )
 
     try:
@@ -111,7 +127,7 @@ async def up_product(
 
 
 @router.delete("/products/{id}", response_model=ProductResponse)
-async def delete_product(id: int, pool=Depends(get_pool)):
+def delete_product(id: int, pool=Depends(get_pool)):
     result = del_product(pool, id)
 
     if result is None:

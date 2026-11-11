@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from backend.app.dependencies import get_pool
 
 from backend.app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate
 from backend.app.exceptions import (
@@ -17,10 +19,10 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
     response_model=OrderResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_order(order_data: OrderCreate, request: Request):
+def create_order(order_data: OrderCreate, pool=Depends(get_pool)):
     try:
         order = post_order(
-            request.app.state.pool,
+            pool,
             user_id=order_data.user_id,
             address_id=order_data.address_id,
             items=[
@@ -51,16 +53,20 @@ def create_order(order_data: OrderCreate, request: Request):
 
 
 @router.get("", response_model=list[OrderResponse])
-def get_orders(request: Request):
-    orders = fetch_orders(request.app.state.pool)
+def get_orders(
+    pool=Depends(get_pool),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    orders = fetch_orders(pool, limit, offset)
     return orders
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
-def get_order_by_id(order_id: int, request: Request):
+def get_order_by_id(order_id: int, pool=Depends(get_pool)):
     try:
         order = fetch_order_by_id(
-            request.app.state.pool,
+            pool,
             order_id,
         )
         return order
@@ -77,11 +83,11 @@ def get_order_by_id(order_id: int, request: Request):
 def change_order_status(
     order_id: int,
     status_data: OrderStatusUpdate,
-    request: Request,
+    pool=Depends(get_pool),
 ):
     try:
         return update_order_status(
-            request.app.state.pool,
+            pool,
             order_id,
             status_data.status,
         )

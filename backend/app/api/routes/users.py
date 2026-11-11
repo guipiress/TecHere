@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/users", response_model=list[UserResponse])
-async def get_users(
+def get_users(
     pool=Depends(get_pool),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -24,7 +24,7 @@ async def get_users(
 
 
 @router.get("/users/{id}", response_model=UserResponse)
-async def get_user_by_id(id: int, pool=Depends(get_pool)):
+def get_user_by_id(id: int, pool=Depends(get_pool)):
     user = fetch_user_by_id(id,pool)
 
     if user is None:
@@ -34,7 +34,7 @@ async def get_user_by_id(id: int, pool=Depends(get_pool)):
 
 
 @router.post("/users", status_code=201, response_model=UserResponse)
-async def create_user(
+def create_user(
     user: UserCreate,
     pool=Depends(get_pool),
 ):
@@ -66,7 +66,7 @@ async def create_user(
 
 
 @router.put("/users/{id}", response_model=UserResponse)
-async def update_user(
+def update_user(
     id: int,
     user: UserUpdate,
     pool=Depends(get_pool),
@@ -109,7 +109,7 @@ async def update_user(
 
 
 @router.delete("/users/{id}", status_code=status.HTTP_200_OK)
-async def remove_user(
+def remove_user(
     id: int,
     pool=Depends(get_pool),
 ):
