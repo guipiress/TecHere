@@ -4,7 +4,7 @@ from psycopg import errors
 from backend.app.exceptions import CategoryNotFoundError, ProductConstraintError
 
 
-def fetch_products(pool):
+def fetch_products(pool, limit: int = 20, offset: int = 0):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -20,7 +20,10 @@ def fetch_products(pool):
                     category.name AS category_name
                 FROM product
                 INNER JOIN category
-                    ON product.category_id = category.id;"""
+                    ON product.category_id = category.id
+                ORDER BY product.id
+                LIMIT %s OFFSET %s""",
+                (limit, offset),
             )
             products = cursor.fetchall()
 

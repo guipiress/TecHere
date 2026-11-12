@@ -27,13 +27,18 @@ def post_category(
     return category
 
 
-def fetch_categories(pool):
+def fetch_categories(pool, limit: int = 20, offset: int = 0):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            cursor.execute("""
-                SELECT *
+            cursor.execute(
+                """
+                SELECT id, name
                 FROM category
-            """)
+                ORDER BY id
+                LIMIT %s OFFSET %s
+                """,
+                (limit, offset),
+            )
 
             categories = cursor.fetchall()
 

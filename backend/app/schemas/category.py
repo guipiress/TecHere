@@ -1,8 +1,12 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
+
+from backend.app.schemas.common import CategoryName
 
 
 class CategoryCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
+    model_config = ConfigDict(extra="forbid")
+
+    name: CategoryName
 
 
 class CategoryResponse(BaseModel):
@@ -11,6 +15,6 @@ class CategoryResponse(BaseModel):
 
 
 class CategoryUpdate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    
-    
+    model_config = ConfigDict(extra="forbid")
+
+    name: CategoryName

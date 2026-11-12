@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from psycopg.rows import dict_row
 from backend.app.exceptions import (
     OrderConstraintError,
@@ -21,11 +23,16 @@ def post_order(pool, *, user_id: int, address_id: int, items: list[dict]):
     with pool.connection() as connection:
         with connection.transaction():
             with connection.cursor(row_factory=dict_row) as cursor:
+                # The address must belong to the user, and the user must be
+                # active (a deactivated account cannot place orders).
                 cursor.execute(
                     """
-                    SELECT id
-                    FROM address
-                    WHERE id = %s AND user_id = %s
+                    SELECT a.id
+                    FROM address AS a
+                    JOIN users AS u ON u.id = a.user_id
+                    WHERE a.id = %s
+                      AND a.user_id = %s
+                      AND u.is_active
                     """,
                     (address_id, user_id),
                 )
@@ -34,20 +41,28 @@ def post_order(pool, *, user_id: int, address_id: int, items: list[dict]):
                         "Address not found or does not belong to user"
                     )
 
-                total_price = 0
+                # Lock every product row in ascending id order, in a single
+                # statement. Locking one by one in the order sent by the
+                # client lets two concurrent orders ([1, 2] and [2, 1])
+                # wait on each other forever (deadlock). A fixed global
+                # order makes that impossible.
+                cursor.execute(
+                    """
+                    SELECT id, sale_price, stock
+                    FROM product
+                    WHERE id = ANY(%s::integer[])
+                    ORDER BY id
+                    FOR UPDATE
+                    """,
+                    (product_ids,),
+                )
+                products = {row["id"]: row for row in cursor.fetchall()}
+
+                total_price = Decimal("0")
                 validated_items = []
 
                 for item in items:
-                    cursor.execute(
-                        """
-                        SELECT id, sale_price, stock
-                        FROM product
-                        WHERE id = %s
-                        FOR UPDATE
-                        """,
-                        (item["product_id"],),
-                    )
-                    product = cursor.fetchone()
+                    product = products.get(item["product_id"])
 
                     if product is None:
                         raise ProductNotFoundError
@@ -114,7 +129,7 @@ def post_order(pool, *, user_id: int, address_id: int, items: list[dict]):
 
 
 
-def fetch_orders(pool):
+def fetch_orders(pool, limit: int = 20, offset: int = 0):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -142,8 +157,10 @@ def fetch_orders(pool):
                 LEFT JOIN order_items oi
                     ON o.id = oi.order_id
                 GROUP BY o.id
-                ORDER BY o.created_at DESC;
-                """
+                ORDER BY o.created_at DESC, o.id DESC
+                LIMIT %s OFFSET %s
+                """,
+                (limit, offset),
             )
 
             orders = cursor.fetchall()
@@ -226,6 +243,23 @@ def update_order_status(pool, order_id: int, new_status: str):
                     )
 
                 if new_status == "CANCELLED":
+                    # Same ascending-id lock order as post_order, so a
+                    # cancellation cannot deadlock with a concurrent order.
+                    cursor.execute(
+                        """
+                        SELECT p.id
+                        FROM product AS p
+                        WHERE p.id IN (
+                            SELECT oi.product_id
+                            FROM order_items AS oi
+                            WHERE oi.order_id = %s
+                        )
+                        ORDER BY p.id
+                        FOR UPDATE
+                        """,
+                        (order_id,),
+                    )
+
                     cursor.execute(
                         """
                         UPDATE product AS p

@@ -5,3 +5,10 @@ __pycache__/
 .idea/
 .env
 .env.test
+.env.*
+!.env.example
+.pytest_cache/
+
+.env.*
+!.env.example
+.pytest_cache/

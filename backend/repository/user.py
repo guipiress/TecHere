@@ -6,6 +6,8 @@ from backend.app.exceptions import (
     UserCPFAlreadyExistsError,
 )
 
+USERS_EMAIL_CONSTRAINTS = {"users_email_key", "users_email_lower_key"}
+
 
 def fetch_users(pool, limit: int, offset: int):
     with pool.connection() as connection:
@@ -108,7 +110,9 @@ def post_user(
             except errors.UniqueViolation as exc:
                 constraint = exc.diag.constraint_name
 
-                if constraint == "users_email_key":
+                # users_email_lower_key is the case-insensitive unique index
+                # (see database/migrations/001_security_hardening.sql).
+                if constraint in USERS_EMAIL_CONSTRAINTS:
                     raise UserEmailAlreadyExistsError(
                         "Este e-mail já está cadastrado."
                     ) from exc
@@ -163,7 +167,7 @@ def put_user(pool, user_id: int, data: dict):
                 cursor.execute(query, values)
                 user = cursor.fetchone()
             except errors.UniqueViolation as exc:
-                if exc.diag.constraint_name == "users_email_key":
+                if exc.diag.constraint_name in USERS_EMAIL_CONSTRAINTS:
                     raise UserEmailAlreadyExistsError(
                     "Este e-mail já está cadastrado."
                     ) from exc
