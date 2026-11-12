@@ -1,11 +1,15 @@
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
+from dotenv import load_dotenv
+from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
+
+from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.dependencies import get_pool
-
 
 @pytest.fixture
 def mock_pool():
