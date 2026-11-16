@@ -2,12 +2,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
 
-from backend.app.exceptions import (
-    OrderConstraintError,
-    ProductNotFoundError,
-    InsufficientStockError,
-    OrderNotFoundError,
-)
+from backend.app.exceptions import OrderNotFoundError
 
 
 ORDER = {

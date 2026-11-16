@@ -176,9 +176,6 @@ def put_user(pool, user_id: int, data: dict):
     return user
 
 
-from psycopg.rows import dict_row
-
-
 def delete_user(pool, user_id: int):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:

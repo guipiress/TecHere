@@ -1,5 +1,4 @@
 from backend.app.exceptions import UserEmailAlreadyExistsError
-from backend.app.exceptions import UserCPFAlreadyExistsError
 from datetime import datetime, timezone
 from unittest.mock import patch
 
