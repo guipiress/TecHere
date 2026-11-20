@@ -30,7 +30,11 @@ def get_current_user(
         payload = decode_access_token(credentials.credentials)
         user_id = payload.get("sub")
 
-        if not isinstance(user_id, str) or not user_id.isdigit():
+        if (
+            not isinstance(user_id, str)
+            or not user_id.isdecimal()
+            or int(user_id) <= 0
+        ):
             raise unauthorized
 
         user = fetch_user_by_id(int(user_id), pool)
