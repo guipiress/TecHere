@@ -21,9 +21,6 @@ class OrderItemCreate(BaseModel):
 class OrderCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    # NOTE: once authentication exists, user_id must come from the
-    # authenticated session, never from the request body.
-    user_id: int = Field(gt=0, le=INT4_MAX)
     address_id: int = Field(gt=0, le=INT4_MAX)
     items: list[OrderItemCreate] = Field(
         min_length=1,

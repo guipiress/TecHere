@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-
 import pytest
 from dotenv import load_dotenv
 from pathlib import Path
@@ -9,7 +8,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 from fastapi.testclient import TestClient
 from backend.app.main import app
-from backend.app.dependencies import get_pool
+from backend.app.dependencies import get_pool, get_current_user
 
 @pytest.fixture
 def mock_pool():
@@ -19,6 +18,12 @@ def mock_pool():
 @pytest.fixture
 def client(mock_pool):
     app.dependency_overrides[get_pool] = lambda: mock_pool
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "role": "ADMIN",
+        "is_active": True,
+    }
 
     try:
         with TestClient(app) as test_client:
