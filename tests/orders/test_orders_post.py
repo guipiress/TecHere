@@ -36,7 +36,6 @@ def test_create_order_success(client):
         response = client.post(
             "/orders",
             json={
-                "user_id": 1,
                 "address_id": 1,
                 "items": [
                     {"product_id": 1, "quantity": 2}
@@ -68,7 +67,6 @@ def test_create_order_invalid_address(client):
         response = client.post(
             "/orders",
             json={
-                "user_id": 1,
                 "address_id": 999,
                 "items": [
                     {"product_id": 1, "quantity": 1}
@@ -90,7 +88,6 @@ def test_create_order_product_not_found(client):
         response = client.post(
             "/orders",
             json={
-                "user_id": 1,
                 "address_id": 1,
                 "items": [
                     {"product_id": 999, "quantity": 1}
@@ -110,7 +107,6 @@ def test_create_order_insufficient_stock(client):
         response = client.post(
             "/orders",
             json={
-                "user_id": 1,
                 "address_id": 1,
                 "items": [
                     {"product_id": 1, "quantity": 100}
@@ -131,7 +127,6 @@ def test_create_order_without_items(client):
         response = client.post(
             "/orders",
             json={
-                "user_id": 1,
                 "address_id": 1,
                 "items": [],
             },
@@ -148,7 +143,6 @@ def test_create_order_invalid_quantity(client):
         response = client.post(
             "/orders",
             json={
-                "user_id": 1,
                 "address_id": 1,
                 "items": [
                     {"product_id": 1, "quantity": 0}

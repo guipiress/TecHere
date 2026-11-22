@@ -1,3 +1,5 @@
+from backend.app.dependencies import get_current_user
+from backend.app.main import app
 from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
@@ -52,3 +54,53 @@ def test_get_order_by_id_invalid_id(client):
     response = client.get("/orders/abc")
 
     assert response.status_code == 422
+
+
+
+def test_customer_order_lookup_is_scoped_to_current_user(client):
+    customer = {
+        "id": 42,
+        "role": "CUSTOMER",
+        "is_active": True,
+    }
+
+    app.dependency_overrides[get_current_user] = lambda: customer
+
+    customer_order = {
+        **ORDER,
+        "user_id": 42,
+    }
+
+    with patch(
+        "backend.app.api.routes.orders.fetch_order_by_id",
+        return_value=customer_order,
+    ) as mock_fetch:
+        response = client.get("/orders/1")
+
+    assert response.status_code == 200
+    assert response.json()["user_id"] == 42
+
+    mock_fetch.assert_called_once()
+    assert mock_fetch.call_args.kwargs["user_id"] == 42
+
+
+def test_customer_cannot_access_another_users_order(client):
+    customer = {
+        "id": 42,
+        "role": "CUSTOMER",
+        "is_active": True,
+    }
+
+    app.dependency_overrides[get_current_user] = lambda: customer
+
+    with patch(
+        "backend.app.api.routes.orders.fetch_order_by_id",
+        side_effect=OrderNotFoundError,
+    ) as mock_fetch:
+        response = client.get("/orders/1")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Order not found"
+
+    mock_fetch.assert_called_once()
+    assert mock_fetch.call_args.kwargs["user_id"] == 42

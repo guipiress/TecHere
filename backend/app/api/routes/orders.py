@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.app.dependencies import get_pool
+from backend.app.dependencies import (
+    get_pool,
+    get_current_user,
+    require_roles,
+)
 
 from backend.app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate
 from backend.app.exceptions import (
@@ -19,11 +23,15 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
     response_model=OrderResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_order(order_data: OrderCreate, pool=Depends(get_pool)):
+def create_order(
+    order_data: OrderCreate,
+    pool=Depends(get_pool),
+    current_user=Depends(get_current_user),
+):
     try:
         order = post_order(
             pool,
-            user_id=order_data.user_id,
+            user_id=current_user["id"],
             address_id=order_data.address_id,
             items=[
                 item.model_dump()
@@ -55,19 +63,38 @@ def create_order(order_data: OrderCreate, pool=Depends(get_pool)):
 @router.get("", response_model=list[OrderResponse])
 def get_orders(
     pool=Depends(get_pool),
+    current_user=Depends(get_current_user),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
-    orders = fetch_orders(pool, limit, offset)
+    orders = fetch_orders(
+        pool,
+        limit,
+        offset,
+        user_id=(
+            current_user["id"]
+            if current_user["role"] == "CUSTOMER"
+            else None
+        ),
+    )
     return orders
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
-def get_order_by_id(order_id: int, pool=Depends(get_pool)):
+def get_order_by_id(
+    order_id: int,
+    pool=Depends(get_pool),
+    current_user=Depends(get_current_user),
+):
     try:
         order = fetch_order_by_id(
             pool,
             order_id,
+            user_id=(
+                current_user["id"]
+                if current_user["role"] == "CUSTOMER"
+                else None
+            ),
         )
         return order
 
@@ -78,12 +105,12 @@ def get_order_by_id(order_id: int, pool=Depends(get_pool)):
         ) from exc
 
 
-
 @router.put("/{order_id}/status", response_model=OrderResponse)
 def change_order_status(
     order_id: int,
     status_data: OrderStatusUpdate,
     pool=Depends(get_pool),
+    current_user=Depends(require_roles("ADMIN", "EMPLOYEE")),
 ):
     try:
         return update_order_status(

@@ -129,11 +129,26 @@ def post_order(pool, *, user_id: int, address_id: int, items: list[dict]):
 
 
 
-def fetch_orders(pool, limit: int = 20, offset: int = 0):
+def fetch_orders(
+    pool,
+    limit: int = 20,
+    offset: int = 0,
+    *,
+    user_id: int | None = None,
+):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
+            where_clause = "TRUE"
+            params = []
+
+            if user_id is not None:
+                where_clause = "o.user_id = %s"
+                params.append(user_id)
+
+            params.extend([limit, offset])
+
             cursor.execute(
-                """
+                f"""
                 SELECT
                     o.id,
                     o.user_id,
@@ -156,11 +171,12 @@ def fetch_orders(pool, limit: int = 20, offset: int = 0):
                 FROM orders o
                 LEFT JOIN order_items oi
                     ON o.id = oi.order_id
+                WHERE {where_clause}
                 GROUP BY o.id
                 ORDER BY o.created_at DESC, o.id DESC
                 LIMIT %s OFFSET %s
                 """,
-                (limit, offset),
+                tuple(params),
             )
 
             orders = cursor.fetchall()
@@ -168,12 +184,22 @@ def fetch_orders(pool, limit: int = 20, offset: int = 0):
     return orders
 
 
-
-def fetch_order_by_id(pool, order_id: int):
+def fetch_order_by_id(
+    pool,
+    order_id: int,
+    *,
+    user_id: int | None = None,
+):
     with pool.connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
+            where_clause = "o.id = %s"
+            params = (order_id,)
+
+            if user_id is not None:
+                where_clause += " AND o.user_id = %s"
+                params += (user_id,)
             cursor.execute(
-                """
+                f"""
                 SELECT
                     o.id,
                     o.user_id,
@@ -195,10 +221,10 @@ def fetch_order_by_id(pool, order_id: int):
                     ) AS items
                 FROM orders o
                 LEFT JOIN order_items oi ON o.id = oi.order_id
-                WHERE o.id = %s
+                WHERE {where_clause}
                 GROUP BY o.id;
                 """,
-                (order_id,),
+                params,
             )
 
             order = cursor.fetchone()

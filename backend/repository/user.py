@@ -191,3 +191,27 @@ def delete_user(pool, user_id: int):
             deleted_user = cursor.fetchone()
 
     return deleted_user
+
+
+
+def fetch_user_by_email_for_auth(pool, email: str):
+    with pool.connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    email,
+                    password_hash,
+                    role,
+                    is_active
+                FROM public.users
+                WHERE lower(email) = lower(%s)
+                """,
+                (email,),
+            )
+
+            user = cursor.fetchone()
+
+    return user

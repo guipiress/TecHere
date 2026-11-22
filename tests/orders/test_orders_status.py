@@ -1,3 +1,5 @@
+from backend.app.dependencies import get_current_user
+from backend.app.main import app
 from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
@@ -75,3 +77,46 @@ def test_update_order_status_invalid_value(client):
     )
 
     assert response.status_code == 422
+
+
+def test_employee_can_update_order_status(client):
+    employee = {
+        "id": 10,
+        "role": "EMPLOYEE",
+        "is_active": True,
+    }
+
+    app.dependency_overrides[get_current_user] = lambda: employee
+
+    with patch(
+        "backend.app.api.routes.orders.update_order_status",
+        return_value=ORDER,
+    ) as mock_update:
+        response = client.put(
+            "/orders/1/status",
+            json={"status": "PAID"},
+        )
+
+    assert response.status_code == 200
+    mock_update.assert_called_once()
+
+
+def test_customer_cannot_update_order_status(client):
+    customer = {
+        "id": 42,
+        "role": "CUSTOMER",
+        "is_active": True,
+    }
+
+    app.dependency_overrides[get_current_user] = lambda: customer
+
+    with patch(
+        "backend.app.api.routes.orders.update_order_status",
+    ) as mock_update:
+        response = client.put(
+            "/orders/1/status",
+            json={"status": "PAID"},
+        )
+
+    assert response.status_code == 403
+    mock_update.assert_not_called()

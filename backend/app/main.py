@@ -12,6 +12,7 @@ from backend.app.api.routes.products import router as product_router
 from backend.app.api.routes.category import router as category_router
 from backend.app.api.routes import users
 from backend.app.api.routes.orders import router as orders_router
+from backend.app.api.routes.auth import router as auth_router
 
 load_dotenv()
 
@@ -93,7 +94,7 @@ app.include_router(product_router)
 app.include_router(category_router)
 app.include_router(users.router)
 app.include_router(orders_router)
-
+app.include_router(auth_router)
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
