@@ -3,6 +3,11 @@ import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+
+# Must run before the application modules below are imported: security.py
+# reads SECRET_KEY at import time.
+load_dotenv()
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from psycopg import errors as pg_errors
@@ -13,8 +18,6 @@ from backend.app.api.routes.category import router as category_router
 from backend.app.api.routes import users
 from backend.app.api.routes.orders import router as orders_router
 from backend.app.api.routes.auth import router as auth_router
-
-load_dotenv()
 
 logger = logging.getLogger("techere.api")
 
