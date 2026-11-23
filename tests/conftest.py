@@ -9,6 +9,16 @@ load_dotenv(PROJECT_ROOT / ".env")
 from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.dependencies import get_pool, get_current_user
+from backend.app.rate_limit import clear_login_limiters
+
+@pytest.fixture(autouse=True)
+def reset_login_limiters():
+    # The limiters are process-wide; without this, failed logins recorded by
+    # one test would block the next one.
+    clear_login_limiters()
+    yield
+    clear_login_limiters()
+
 
 @pytest.fixture
 def mock_pool():
