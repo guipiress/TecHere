@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from psycopg import errors
 
-from backend.app.dependencies import get_pool
+from backend.app.dependencies import get_pool, require_admin, require_staff
 from backend.repository.category import (
     fetch_categories,
     fetch_category_by_id,
@@ -47,7 +47,8 @@ def get_category(id: int, pool=Depends(get_pool)):
 )
 def create_category(
     category: CategoryCreate,
-    pool=Depends(get_pool)
+    pool=Depends(get_pool),
+    _staff=Depends(require_staff),
 ):
     try:
         return post_category(
@@ -66,7 +67,8 @@ def create_category(
 def up_category(
     id: int,
     category: CategoryUpdate,
-    pool=Depends(get_pool)
+    pool=Depends(get_pool),
+    _staff=Depends(require_staff),
 ):
     try:
         result = put_category(
@@ -91,7 +93,11 @@ def up_category(
 
 
 @router.delete("/categories/{id}", response_model=CategoryResponse)
-def delete_category(id: int, pool=Depends(get_pool)):
+def delete_category(
+    id: int,
+    pool=Depends(get_pool),
+    _admin=Depends(require_admin),
+):
     result = del_category(pool, id)
     if result is None:
         raise HTTPException(status_code=404, detail="Category not found") 

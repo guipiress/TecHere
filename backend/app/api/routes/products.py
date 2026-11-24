@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.app.dependencies import get_pool
+from backend.app.dependencies import get_pool, require_admin, require_staff
 from backend.repository.product import (
     fetch_products,
     fetch_product_by_id,
@@ -10,6 +10,7 @@ from backend.repository.product import (
 )
 
 from backend.app.schemas.product import (
+    ProductPublicResponse,
     ProductResponse,
     ProductCreate,
     ProductUpdate
@@ -22,7 +23,7 @@ from backend.app.exceptions import (
 router = APIRouter()
 
 
-@router.get("/products", response_model=list[ProductResponse])
+@router.get("/products", response_model=list[ProductPublicResponse])
 def get_products(
     pool=Depends(get_pool),
     limit: int = Query(default=20, ge=1, le=100),
@@ -31,7 +32,7 @@ def get_products(
     return fetch_products(pool, limit, offset)
 
 
-@router.get("/products/{id}", response_model=ProductResponse)
+@router.get("/products/{id}", response_model=ProductPublicResponse)
 def get_product(id: int, pool=Depends(get_pool)):
     product = fetch_product_by_id(id, pool)
 
@@ -44,7 +45,8 @@ def get_product(id: int, pool=Depends(get_pool)):
 @router.post("/products", status_code=201, response_model=ProductResponse)
 def create_product(
     product: ProductCreate,
-    pool=Depends(get_pool)
+    pool=Depends(get_pool),
+    _staff=Depends(require_staff),
 ):
     try:
         new_product = post_product(
@@ -78,7 +80,8 @@ def create_product(
 def up_product(
     id: int,
     product: ProductUpdate,
-    pool=Depends(get_pool)
+    pool=Depends(get_pool),
+    _staff=Depends(require_staff),
 ):
     data = product.model_dump(exclude_unset=True)
 
@@ -127,7 +130,11 @@ def up_product(
 
 
 @router.delete("/products/{id}", response_model=ProductResponse)
-def delete_product(id: int, pool=Depends(get_pool)):
+def delete_product(
+    id: int,
+    pool=Depends(get_pool),
+    _admin=Depends(require_admin),
+):
     result = del_product(pool, id)
 
     if result is None:

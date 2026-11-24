@@ -48,6 +48,27 @@ def get_current_user(
     return user
 
 
+STAFF_ROLES = ("ADMIN", "EMPLOYEE")
+
+
+def is_staff(user) -> bool:
+    return user["role"] in STAFF_ROLES
+
+
+def ensure_self_or_roles(current_user, target_user_id: int, *roles):
+    """Allow the owner of the resource, or any of the given roles."""
+    if current_user["id"] == target_user_id:
+        return
+
+    if current_user["role"] in roles:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Permission denied.",
+    )
+
+
 def require_roles(*allowed_roles):
     def role_checker(current_user=Depends(get_current_user)):
         if current_user["role"] not in allowed_roles:
@@ -59,3 +80,9 @@ def require_roles(*allowed_roles):
         return current_user
 
     return role_checker
+
+
+# Shared by the route modules. Staff manage the catalog; deleting things and
+# reading other people's personal data is limited to administrators.
+require_staff = require_roles(*STAFF_ROLES)
+require_admin = require_roles("ADMIN")

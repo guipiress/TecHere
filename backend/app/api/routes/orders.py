@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from backend.app.dependencies import (
     get_pool,
     get_current_user,
+    is_staff,
     require_roles,
 )
 
@@ -71,10 +72,10 @@ def get_orders(
         pool,
         limit,
         offset,
+        # Fail closed: anyone who is not staff only ever sees their own
+        # orders, including any role added in the future.
         user_id=(
-            current_user["id"]
-            if current_user["role"] == "CUSTOMER"
-            else None
+            None if is_staff(current_user) else current_user["id"]
         ),
     )
     return orders
@@ -91,9 +92,7 @@ def get_order_by_id(
             pool,
             order_id,
             user_id=(
-                current_user["id"]
-                if current_user["role"] == "CUSTOMER"
-                else None
+                None if is_staff(current_user) else current_user["id"]
             ),
         )
         return order

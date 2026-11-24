@@ -91,6 +91,12 @@ login_account_limiter = SlidingWindowLimiter(5, LOGIN_WINDOW_SECONDS)
 login_ip_limiter = SlidingWindowLimiter(20, LOGIN_WINDOW_SECONDS)
 
 
+# Public sign-up runs a memory-hard Argon2 hash per request, so an unbounded
+# stream of registrations is a cheap way to exhaust CPU and memory.
+register_ip_limiter = SlidingWindowLimiter(10, 60 * 60)
+
+
 def clear_login_limiters() -> None:
     login_account_limiter.clear()
     login_ip_limiter.clear()
+    register_ip_limiter.clear()

@@ -40,7 +40,22 @@ class ProductUpdate(BaseModel):
     description: Description | None = None
 
 
+class ProductPublicResponse(BaseModel):
+    """What the public catalogue shows. No purchase (cost) price."""
+
+    id: int
+    name: str
+    sale_price: Decimal
+    stock: int
+    brand: str
+    category_id: int
+    category_name: str
+    description: str | None = None
+
+
 class ProductResponse(BaseModel):
+    """Staff view: includes the purchase price."""
+
     id: int
     name: str
     purchase_price: Decimal
