@@ -1,4 +1,5 @@
 import os
+import threading
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -48,6 +49,13 @@ if not 1 <= ACCESS_TOKEN_EXPIRE_MINUTES <= 24 * 60:
 
 password_hasher = PasswordHasher()
 
+# Each Argon2 hash uses ~64 MiB of RAM by design. FastAPI runs these (sync)
+# routes in a thread pool of ~40 threads, so a burst of logins / sign-ups
+# could hold ~2.5 GB at once and get the process killed. Only a few hashes
+# run at a time; the rest wait their turn.
+MAX_CONCURRENT_HASHES = 4
+_hash_slots = threading.BoundedSemaphore(MAX_CONCURRENT_HASHES)
+
 # A real Argon2 hash of a throw-away password. It is verified when a login
 # names an account that does not exist, so that "unknown e-mail" and "wrong
 # password" take the same time and cannot be told apart by timing.
@@ -55,14 +63,16 @@ _DUMMY_PASSWORD_HASH = password_hasher.hash("not-a-real-password")
 
 
 def hash_password(password: str) -> str:
-    return password_hasher.hash(password)
+    with _hash_slots:
+        return password_hasher.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    try:
-        return password_hasher.verify(password_hash, password)
-    except (VerifyMismatchError, VerificationError, InvalidHashError):
-        return False
+    with _hash_slots:
+        try:
+            return password_hasher.verify(password_hash, password)
+        except (VerifyMismatchError, VerificationError, InvalidHashError):
+            return False
 
 
 def verify_password_against_dummy(password: str) -> bool:
