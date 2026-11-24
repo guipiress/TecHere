@@ -1,0 +1,3 @@
+# Let Git normalise line endings so every machine commits LF, whatever its
+# core.autocrlf setting (a stray CR once made Git treat source files as binary).
+* text=auto
