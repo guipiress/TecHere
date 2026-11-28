@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from backend.app.dependencies import get_pool
-from backend.app.rate_limit import login_account_limiter, login_ip_limiter
+from backend.app.rate_limit import reserve_login_attempt
 from backend.app.schemas.auth import LoginRequest, TokenResponse
 from backend.app.security import (
     create_access_token,
@@ -49,13 +49,9 @@ def login(
     ip = _client_ip(request)
     account_key = f"{ip}|{email}"
 
-    # Checked before touching the database or the (expensive) hash function.
-    retry_after = max(
-        login_ip_limiter.retry_after(ip),
-        login_account_limiter.retry_after(account_key),
-    )
+    reservation, retry_after = reserve_login_attempt(ip, account_key)
 
-    if retry_after:
+    if reservation is None:
         logger.warning(
             "login blocked by rate limit ip=%s account=%s",
             ip,
@@ -67,35 +63,39 @@ def login(
             headers={"Retry-After": str(retry_after)},
         )
 
-    user = fetch_user_by_email_for_auth(pool, email)
+    try:
+        user = fetch_user_by_email_for_auth(pool, email)
 
-    if user is None:
-        # Same cost as a real check, so response time does not reveal
-        # whether the e-mail is registered.
-        password_valid = verify_password_against_dummy(credentials.password)
-    else:
-        password_valid = verify_password(
-            credentials.password,
-            user["password_hash"],
+        if user is None:
+            password_valid = verify_password_against_dummy(
+                credentials.password
+            )
+        else:
+            password_valid = verify_password(
+                credentials.password,
+                user["password_hash"],
+            )
+
+        if user is None or not password_valid or not user["is_active"]:
+            reservation.keep()
+
+            logger.warning(
+                "failed login ip=%s account=%s",
+                ip,
+                _fingerprint(email),
+            )
+            raise _invalid_credentials()
+
+        access_token = create_access_token(
+            {"sub": str(user["id"])}
         )
 
-    if user is None or not password_valid or not user["is_active"]:
-        login_ip_limiter.record(ip)
-        login_account_limiter.record(account_key)
-        logger.warning(
-            "failed login ip=%s account=%s",
-            ip,
-            _fingerprint(email),
-        )
-        raise _invalid_credentials()
+        reservation.succeed()
 
-    login_account_limiter.reset(account_key)
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+        }
 
-    access_token = create_access_token(
-        {"sub": str(user["id"])}
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-    }
+    finally:
+        reservation.release()

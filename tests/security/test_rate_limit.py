@@ -1,5 +1,13 @@
-from backend.app.rate_limit import SlidingWindowLimiter
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
+from backend.app.rate_limit import (
+    SlidingWindowLimiter,
+    clear_login_limiters,
+    login_account_limiter,
+    login_ip_limiter,
+    reserve_login_attempt,
+)
 
 class FakeClock:
     def __init__(self):
@@ -120,3 +128,148 @@ def test_expired_keys_are_dropped():
     limiter.retry_after("a")
 
     assert "a" not in limiter._events
+
+
+def test_concurrent_login_reservations_do_not_exceed_account_limit():
+    clear_login_limiters()
+
+    workers = 20
+    barrier = Barrier(workers)
+
+    def attempt():
+        barrier.wait()
+
+        reservation, retry_after = reserve_login_attempt(
+            "127.0.0.1",
+            "127.0.0.1|teste@example.com",
+        )
+
+        if reservation is not None:
+            reservation.keep()
+
+        return reservation is not None, retry_after
+
+    try:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            results = list(executor.map(lambda _: attempt(), range(workers)))
+
+        accepted = sum(1 for success, _ in results if success)
+        blocked = sum(1 for success, _ in results if not success)
+
+        assert accepted == 5
+        assert blocked == 15
+
+    finally:
+        clear_login_limiters()
+
+
+def test_success_does_not_remove_another_pending_reservation():
+    clear_login_limiters()
+
+    ip = "127.0.0.1"
+    account_key = f"{ip}|teste@example.com"
+
+    try:
+        # Três falhas anteriores na conta.
+        for _ in range(3):
+            login_account_limiter.record(account_key)
+
+        # Duas requisições conseguem reservar as duas vagas restantes.
+        first, retry_after = reserve_login_attempt(ip, account_key)
+        assert first is not None
+        assert retry_after == 0
+
+        second, retry_after = reserve_login_attempt(ip, account_key)
+        assert second is not None
+        assert retry_after == 0
+
+        # A primeira autenticação tem sucesso.
+        first.succeed()
+
+        # A reserva da segunda requisição deve continuar existindo.
+        events = login_account_limiter._events[account_key]
+
+        assert len(events) == 1
+        assert events[0].confirmed is False
+
+        # A segunda autenticação falha.
+        second.keep()
+
+        events = login_account_limiter._events[account_key]
+
+        assert len(events) == 1
+        assert events[0].confirmed is True
+
+    finally:
+        clear_login_limiters()
+
+
+def test_release_removes_only_its_own_reservations():
+    clear_login_limiters()
+
+    ip = "127.0.0.1"
+    account_key = f"{ip}|teste@example.com"
+
+    try:
+        first, _ = reserve_login_attempt(ip, account_key)
+        second, _ = reserve_login_attempt(ip, account_key)
+
+        assert first is not None
+        assert second is not None
+
+        # Simula uma exceção durante o processamento da primeira requisição.
+        first.release()
+
+        ip_events = login_ip_limiter._events[ip]
+        account_events = login_account_limiter._events[account_key]
+
+        assert len(ip_events) == 1
+        assert len(account_events) == 1
+
+        # A segunda reserva continua válida.
+        second.keep()
+
+        assert login_ip_limiter.retry_after(ip) == 0
+        assert login_account_limiter.retry_after(account_key) == 0
+
+        assert login_ip_limiter._events[ip][0].confirmed is True
+        assert login_account_limiter._events[account_key][0].confirmed is True
+
+    finally:
+        clear_login_limiters()
+
+
+def test_concurrent_login_reservations_do_not_exceed_ip_limit():
+    clear_login_limiters()
+
+    workers = 30
+    barrier = Barrier(workers)
+    ip = "127.0.0.1"
+
+    def attempt(index):
+        barrier.wait()
+
+        reservation, retry_after = reserve_login_attempt(
+            ip,
+            f"{ip}|user{index}@example.com",
+        )
+
+        if reservation is not None:
+            reservation.keep()
+
+        return reservation is not None, retry_after
+
+    try:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            results = list(
+                executor.map(attempt, range(workers))
+            )
+
+        accepted = sum(1 for success, _ in results if success)
+        blocked = sum(1 for success, _ in results if not success)
+
+        assert accepted == 20
+        assert blocked == 10
+
+    finally:
+        clear_login_limiters()
