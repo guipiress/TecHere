@@ -3,7 +3,13 @@ import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+
+# Must run before the application modules below are imported: security.py
+# reads SECRET_KEY at import time.
+load_dotenv()
+
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from psycopg import errors as pg_errors
 from psycopg.conninfo import make_conninfo
@@ -13,8 +19,6 @@ from backend.app.api.routes.category import router as category_router
 from backend.app.api.routes import users
 from backend.app.api.routes.orders import router as orders_router
 from backend.app.api.routes.auth import router as auth_router
-
-load_dotenv()
 
 logger = logging.getLogger("techere.api")
 
@@ -184,6 +188,27 @@ async def operational_error_handler(request: Request, exc: Exception):
         503,
         "Service temporarily unavailable",
         headers={"Retry-After": "5"},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    # FastAPI's default 422 body repeats each rejected value in an "input"
+    # field. For a sign-up or login request that includes the password the
+    # client just typed, which then ends up in proxy / client / log storage.
+    # Keep what a client needs to show the error and drop the echoed values.
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": [
+                {
+                    "type": error["type"],
+                    "loc": list(error["loc"]),
+                    "msg": error["msg"],
+                }
+                for error in exc.errors()
+            ]
+        },
     )
 
 
