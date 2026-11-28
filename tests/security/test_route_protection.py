@@ -29,10 +29,24 @@ def _dependency_calls(dependant):
 
 
 def _all_routes():
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            for method in route.methods - {"HEAD", "OPTIONS"}:
-                yield method, route.path, route
+    def walk(routes, prefix=""):
+        for route in routes:
+            if isinstance(route, APIRoute):
+                for method in route.methods - {"HEAD", "OPTIONS"}:
+                    yield method, prefix + route.path, route
+
+            elif (
+                hasattr(route, "original_router")
+                and hasattr(route, "include_context")
+            ):
+                context = route.include_context
+
+                yield from walk(
+                    route.original_router.routes,
+                    prefix + context.prefix,
+                )
+
+    yield from walk(app.routes)
 
 
 def test_every_route_requires_authentication_unless_explicitly_public():
